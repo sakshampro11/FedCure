@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { KeyRound, Activity, ArrowLeft } from "lucide-react";
+import { KeyRound, Activity, ArrowLeft, Loader2 } from "lucide-react";
 import Image from "next/image";
 
 export default function LoginPage() {
@@ -39,7 +39,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex flex-col md:flex-row min-h-[calc(100vh-0rem)] w-full bg-white overflow-hidden">
+    <div className="flex flex-col md:flex-row min-h-[calc(100vh-0rem)] w-full bg-white overflow-hidden animate-in fade-in slide-in-from-bottom-8 duration-700">
       
       {/* Left side: Image and Branding */}
       <div className="hidden md:flex md:w-1/2 relative bg-slate-100 overflow-hidden">
@@ -117,7 +117,7 @@ export default function LoginPage() {
             )}
 
             <Button type="submit" className="w-full h-14 bg-blue-600 hover:bg-blue-700 text-white text-lg font-semibold rounded-xl shadow-xl shadow-blue-500/20 transition-all active:scale-[0.98]" disabled={loading || !apiKey}>
-              {loading ? "Authenticating..." : "Login to Dashboard"}
+              {loading ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Authenticating...</> : "Login to Dashboard"}
               {!loading && <Activity className="ml-2 h-5 w-5" />}
             </Button>
           </form>

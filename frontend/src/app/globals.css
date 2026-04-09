@@ -90,6 +90,7 @@
   }
   html {
     @apply font-sans;
+    scroll-behavior: smooth;
   }
 
   @keyframes infinite-scroll {

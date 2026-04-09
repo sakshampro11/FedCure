@@ -14,6 +14,7 @@ import { ShieldCheck, Activity, Users, Settings, Database, Server, RefreshCw } f
 
 export default function DashboardPage() {
   const router = useRouter();
+  const [refreshing, setRefreshing] = useState(false);
   
   // Dashboard Metrics State
   const [metrics, setMetrics] = useState({
@@ -73,6 +74,12 @@ export default function DashboardPage() {
       }
       console.error("Failed to fetch metrics", err);
     }
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await fetchMetrics();
+    setTimeout(() => setRefreshing(false), 500);
   };
 
   useEffect(() => {
@@ -138,10 +145,10 @@ export default function DashboardPage() {
           <p className="text-slate-500">Connected to the FedCure Privacy-Preserving Network</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={fetchMetrics}>
-            <RefreshCw className="h-4 w-4 mr-2" /> Refresh Status
+          <Button variant="outline" size="sm" onClick={handleRefresh} disabled={refreshing}>
+            <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? "animate-spin" : ""}`} /> Refresh Status
           </Button>
-          <Button variant="ghost" size="sm" onClick={logout}>
+          <Button variant="destructive" size="sm" onClick={logout}>
             Disconnect
           </Button>
         </div>
@@ -398,7 +405,7 @@ export default function DashboardPage() {
             </div>
 
             <div className="flex flex-col md:flex-row gap-6 mt-6 items-end">
-              <Button type="submit" size="lg" className="bg-blue-600 hover:bg-blue-700 w-full md:w-64" disabled={predicting}>
+              <Button type="submit" size="lg" className="bg-blue-600 hover:bg-blue-700 w-full md:w-64 text-white font-bold" disabled={predicting}>
                 {predicting ? "Running Inference..." : "Predict Risk"}
               </Button>
 
@@ -443,21 +450,30 @@ export default function DashboardPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="pt-2 space-y-4">
-           <div className="bg-slate-800/50 p-4 rounded-md overflow-x-auto border border-slate-700">
-             <pre className="text-sm text-blue-300 font-mono">
-{`# 1. Configure your Hospital credentials
-export API_KEY="<your-api-key>"
+           <div className="bg-slate-800/50 p-4 rounded-md border border-slate-700 flex flex-col gap-6">
+             <div>
+               <div className="text-xs text-slate-400 mb-2 uppercase tracking-wider font-semibold">Mac / Linux (Bash)</div>
+               <pre className="text-sm text-blue-300 font-mono bg-slate-900 overflow-x-auto p-4 rounded border border-slate-700 shadow-inner">
+{`export API_KEY="<your-api-key>"
 export HOSPITAL_ID="<your-hospital-id>"
-export SERVER_URL="http://localhost:8000" # Update to your server's IP if remote
+export SERVER_URL="http://localhost:8000"
 
-# 2. Run the federated learning client using Docker
 docker build -t fedcure-client ./client
-docker run --net=host \\
-           --env API_KEY=$API_KEY \\
-           --env HOSPITAL_ID=$HOSPITAL_ID \\
-           --env SERVER_URL=$SERVER_URL \\
-           fedcure-client`}
-             </pre>
+docker run --net=host --env API_KEY=$API_KEY --env HOSPITAL_ID=$HOSPITAL_ID --env SERVER_URL=$SERVER_URL fedcure-client`}
+               </pre>
+             </div>
+             
+             <div>
+               <div className="text-xs text-slate-400 mb-2 uppercase tracking-wider font-semibold">Windows (PowerShell)</div>
+               <pre className="text-sm text-blue-300 font-mono bg-slate-900 overflow-x-auto p-4 rounded border border-slate-700 shadow-inner">
+{`$env:API_KEY="<your-api-key>"
+$env:HOSPITAL_ID="<your-hospital-id>"
+$env:SERVER_URL="http://localhost:8000"
+
+docker build -t fedcure-client ./client
+docker run --env API_KEY=$env:API_KEY --env HOSPITAL_ID=$env:HOSPITAL_ID --env SERVER_URL=$env:SERVER_URL fedcure-client`}
+               </pre>
+             </div>
            </div>
            <div className="text-xs text-slate-400 mt-4 border-t border-slate-800 pt-4">
              Ensure <code className="bg-slate-800 px-1 py-0.5 rounded text-slate-300">heart_disease_data.csv</code> is placed inside the client directory. You can customize <code className="bg-slate-800 px-1 py-0.5 rounded text-slate-300">NUM_ROUNDS</code> and <code className="bg-slate-800 px-1 py-0.5 rounded text-slate-300">EPOCHS_PER_ROUND</code> via environment variables to alter the training loop.

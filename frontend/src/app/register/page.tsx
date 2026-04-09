@@ -5,7 +5,7 @@ import { registerHospital } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { AlertCircle, CheckCircle2, Copy, Activity, ArrowLeft, ShieldCheck } from "lucide-react";
+import { AlertCircle, CheckCircle2, Copy, Activity, ArrowLeft, ShieldCheck, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -48,7 +48,7 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="flex flex-col md:flex-row min-h-screen w-full bg-white overflow-hidden">
+    <div className="flex flex-col md:flex-row min-h-screen w-full bg-white overflow-hidden animate-in fade-in slide-in-from-bottom-8 duration-700">
       
       {/* Left side: Image and Branding */}
       <div className="hidden md:flex md:w-1/2 relative bg-slate-100 overflow-hidden">
@@ -195,7 +195,7 @@ export default function RegisterPage() {
                 )}
 
                 <Button type="submit" className="w-full h-14 bg-blue-600 hover:bg-blue-700 text-white text-lg font-semibold rounded-xl shadow-xl shadow-blue-500/20 transition-all mt-4" disabled={loading}>
-                  {loading ? "Registering..." : "Complete Registration"}
+                  {loading ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Registering...</> : "Complete Registration"}
                   {!loading && <ArrowLeft className="ml-2 h-5 w-5 rotate-180" />}
                 </Button>
               </form>

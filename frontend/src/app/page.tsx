@@ -15,7 +15,7 @@ import { HeroScroller } from "@/components/hero-scroller";
 
 export default function Home() {
   return (
-    <div className="flex flex-col items-center bg-white min-h-screen text-slate-900 selection:bg-blue-100 w-full">
+    <div className="flex flex-col items-center bg-white min-h-screen text-slate-900 selection:bg-blue-100 w-full animate-in fade-in slide-in-from-bottom-8 duration-700">
       
       {/* Navigation Bar - Liquid Glass Pill (Light Version) */}
       <header className="fixed top-6 left-1/2 -translate-x-1/2 z-50 w-[95%] max-w-5xl rounded-2xl border border-slate-200/60 bg-white/70 backdrop-blur-xl backdrop-saturate-150 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)]">

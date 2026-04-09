@@ -17,7 +17,9 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [apiKey, setApiKey] = useState("");
-  const [copied, setCopied] = useState(false);
+  const [hospitalId, setHospitalId] = useState<number | null>(null);
+  const [copiedKey, setCopiedKey] = useState(false);
+  const [copiedId, setCopiedId] = useState(false);
   const router = useRouter();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -31,10 +33,11 @@ export default function RegisterPage() {
     
     try {
       const response = await registerHospital(formData);
-      if (response.api_key) {
+      if (response.api_key && response.hospital_id !== undefined) {
         setApiKey(response.api_key);
+        setHospitalId(response.hospital_id);
       } else {
-        throw new Error("API key not returned from server.");
+        throw new Error("Invalid response from server.");
       }
     } catch (err: any) {
       setError(err?.response?.data?.detail || err.message || "Registration failed. Please try again.");
@@ -43,10 +46,18 @@ export default function RegisterPage() {
     }
   };
 
-  const copyToClipboard = () => {
+  const copyKeyToClipboard = () => {
     navigator.clipboard.writeText(apiKey);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    setCopiedKey(true);
+    setTimeout(() => setCopiedKey(false), 2000);
+  };
+
+  const copyIdToClipboard = () => {
+    if (hospitalId !== null) {
+      navigator.clipboard.writeText(hospitalId.toString());
+      setCopiedId(true);
+      setTimeout(() => setCopiedId(false), 2000);
+    }
   };
 
   return (
@@ -112,21 +123,33 @@ export default function RegisterPage() {
               <div className="bg-amber-50 border border-amber-200 text-amber-800 p-6 rounded-2xl space-y-3 text-sm flex items-start gap-4">
                 <AlertCircle className="h-6 w-6 text-amber-600 mt-1 shrink-0" />
                 <div>
-                  <p className="font-bold text-amber-900 text-base">Save your API key securely</p>
+                  <p className="font-bold text-amber-900 text-base">Save your Hospital ID and API key</p>
                   <p className="text-amber-800/80 leading-relaxed">
-                    We will not show it to you again. This key is required to log in and participate in federated training sessions.
+                    We will not show them to you again. This information is required to log in and participate safely in federated training sessions (e.g. configuring the local env).
                   </p>
                 </div>
               </div>
               
+              <div className="space-y-4">
+                <Label className="text-slate-700 font-semibold tracking-wide uppercase text-xs">Your Hospital ID</Label>
+                <div className="flex gap-3">
+                  <div className="flex-1 h-14 bg-slate-50 border border-slate-200 rounded-xl flex items-center px-4 font-mono text-sm text-slate-700 overflow-hidden">
+                    {hospitalId}
+                  </div>
+                  <Button variant="outline" type="button" className="h-14 w-14 rounded-xl border-slate-200 hover:bg-slate-50 transition-all shrink-0" onClick={copyIdToClipboard} title="Copy to clipboard">
+                    {copiedId ? <CheckCircle2 className="h-5 w-5 text-green-600" /> : <Copy className="h-5 w-5" />}
+                  </Button>
+                </div>
+              </div>
+
               <div className="space-y-4">
                 <Label className="text-slate-700 font-semibold tracking-wide uppercase text-xs">Your Private API Key</Label>
                 <div className="flex gap-3">
                   <div className="flex-1 h-14 bg-slate-50 border border-slate-200 rounded-xl flex items-center px-4 font-mono text-sm text-slate-700 overflow-hidden">
                     {apiKey}
                   </div>
-                  <Button variant="outline" className="h-14 w-14 rounded-xl border-slate-200 hover:bg-slate-50 transition-all shrink-0" onClick={copyToClipboard} title="Copy to clipboard">
-                    {copied ? <CheckCircle2 className="h-5 w-5 text-green-600" /> : <Copy className="h-5 w-5" />}
+                  <Button variant="outline" type="button" className="h-14 w-14 rounded-xl border-slate-200 hover:bg-slate-50 transition-all shrink-0" onClick={copyKeyToClipboard} title="Copy to clipboard">
+                    {copiedKey ? <CheckCircle2 className="h-5 w-5 text-green-600" /> : <Copy className="h-5 w-5" />}
                   </Button>
                 </div>
               </div>

@@ -10,6 +10,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 
+import { Logo } from "@/components/logo";
+
 export default function RegisterPage() {
   const [formData, setFormData] = useState({ name: "", location: "", admin_email: "" });
   const [loading, setLoading] = useState(false);
@@ -62,13 +64,13 @@ export default function RegisterPage() {
         <div className="absolute inset-0 bg-blue-600/10 mix-blend-multiply" />
         
         {/* Branding Overlay */}
-        <div className="absolute top-12 left-12 z-10 flex items-center gap-2">
-          <div className="bg-white/90 backdrop-blur p-2 rounded-xl shadow-lg border border-white/50">
-            <Activity className="h-6 w-6 text-blue-600" />
-          </div>
-          <span className="text-2xl font-bold tracking-tight text-white drop-shadow-md">
-            Fed<span className="text-blue-200">Cure</span>
-          </span>
+        <div className="absolute top-12 left-12 z-10">
+          <Link href="/">
+            <Logo 
+              iconClassName="bg-white/90 backdrop-blur shadow-xl border border-white/50 p-2.5" 
+              textClassName="text-white drop-shadow-md text-2xl" 
+            />
+          </Link>
         </div>
 
         <div className="absolute bottom-12 left-12 z-10 max-w-md">

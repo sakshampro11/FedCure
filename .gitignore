@@ -1,3 +1,25 @@
-/FedCure_Abstract_HackBVP
-/FedCure_Short_PRD
-/heart_disease_data
+# Ignore specific Hackathon Documents and Datasets
+/FedCure_Abstract_HackBVP.pdf
+/FedCure_Short_PRD.docx
+/heart_disease_data.csv
+
+# Python Caches & Virtual Environments
+__pycache__/
+*.py[cod]
+*$py.class
+env/
+venv/
+.venv/
+.env
+
+# Database
+fedcure.db
+
+# Federated Learning Saved Models
+models/
+*.pt
+*.pth
+
+# OS specific files
+.DS_Store
+Thumbs.db

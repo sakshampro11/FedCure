@@ -5,3 +5,6 @@ python-jose[cryptography]
 python-multipart
 passlib
 bcrypt
+torch
+numpy
+pandas

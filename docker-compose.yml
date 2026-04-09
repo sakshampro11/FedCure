@@ -1,0 +1,103 @@
+version: "3.9"
+
+services:
+  # ─────────────────────────────────────────────
+  # FedCure Backend (FastAPI + Global Model)
+  # ─────────────────────────────────────────────
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./models:/app/models
+      - ./data:/app/data
+    environment:
+      - DATABASE_URL=sqlite:///./fedcure.db
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ─────────────────────────────────────────────
+  # FL Client — Hospital 1
+  # ─────────────────────────────────────────────
+  client1:
+    build:
+      context: ./client
+    depends_on:
+      - backend
+    volumes:
+      - ./data/hospital_1.csv:/app/heart_disease_data.csv
+    environment:
+      - SERVER_URL=http://backend:8000
+      - API_KEY=${HOSPITAL_1_API_KEY}
+      - HOSPITAL_ID=1
+      - NUM_ROUNDS=5
+      - EPOCHS_PER_ROUND=3
+
+  # ─────────────────────────────────────────────
+  # FL Client — Hospital 2
+  # ─────────────────────────────────────────────
+  client2:
+    build:
+      context: ./client
+    depends_on:
+      - backend
+    volumes:
+      - ./data/hospital_2.csv:/app/heart_disease_data.csv
+    environment:
+      - SERVER_URL=http://backend:8000
+      - API_KEY=${HOSPITAL_2_API_KEY}
+      - HOSPITAL_ID=2
+      - NUM_ROUNDS=5
+      - EPOCHS_PER_ROUND=3
+
+  # ─────────────────────────────────────────────
+  # FL Client — Hospital 3
+  # ─────────────────────────────────────────────
+  client3:
+    build:
+      context: ./client
+    depends_on:
+      - backend
+    volumes:
+      - ./data/hospital_3.csv:/app/heart_disease_data.csv
+    environment:
+      - SERVER_URL=http://backend:8000
+      - API_KEY=${HOSPITAL_3_API_KEY}
+      - HOSPITAL_ID=3
+      - NUM_ROUNDS=5
+      - EPOCHS_PER_ROUND=3
+
+  # ─────────────────────────────────────────────
+  # FL Client — Hospital 4
+  # ─────────────────────────────────────────────
+  client4:
+    build:
+      context: ./client
+    depends_on:
+      - backend
+    volumes:
+      - ./data/hospital_4.csv:/app/heart_disease_data.csv
+    environment:
+      - SERVER_URL=http://backend:8000
+      - API_KEY=${HOSPITAL_4_API_KEY}
+      - HOSPITAL_ID=4
+      - NUM_ROUNDS=5
+      - EPOCHS_PER_ROUND=3
+
+  # ─────────────────────────────────────────────
+  # FedCure Frontend (Next.js Dashboard)
+  # ─────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000

@@ -427,6 +427,45 @@ export default function DashboardPage() {
         </CardContent>
       </Card>
 
+      {/* E. Local Node Installation Guide */}
+      <Card className="bg-slate-900 text-slate-50 border-none shadow-xl relative overflow-hidden">
+        <div className="absolute -right-4 -top-4 opacity-10">
+          <Server className="w-32 h-32" />
+        </div>
+        <CardHeader>
+          <CardTitle className="text-blue-400 flex items-center gap-2">
+            <Server className="h-5 w-5" />
+            Participate in Training (Local Node Setup)
+          </CardTitle>
+          <CardDescription className="text-slate-400">
+            Execute the following command on your hospital&apos;s localized, firewalled servers where private patient data resides. 
+            This script downloads the current global model, trains locally, adds differential privacy noise, and securely submits the weight gradients.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="pt-2 space-y-4">
+           <div className="bg-slate-800/50 p-4 rounded-md overflow-x-auto border border-slate-700">
+             <pre className="text-sm text-blue-300 font-mono">
+{`# 1. Configure your Hospital credentials
+export API_KEY="<your-api-key>"
+export HOSPITAL_ID="<your-hospital-id>"
+export SERVER_URL="http://localhost:8000" # Update to your server's IP if remote
+
+# 2. Run the federated learning client using Docker
+docker build -t fedcure-client ./client
+docker run --net=host \\
+           --env API_KEY=$API_KEY \\
+           --env HOSPITAL_ID=$HOSPITAL_ID \\
+           --env SERVER_URL=$SERVER_URL \\
+           fedcure-client`}
+             </pre>
+           </div>
+           <div className="text-xs text-slate-400 mt-4 border-t border-slate-800 pt-4">
+             Ensure <code className="bg-slate-800 px-1 py-0.5 rounded text-slate-300">heart_disease_data.csv</code> is placed inside the client directory. You can customize <code className="bg-slate-800 px-1 py-0.5 rounded text-slate-300">NUM_ROUNDS</code> and <code className="bg-slate-800 px-1 py-0.5 rounded text-slate-300">EPOCHS_PER_ROUND</code> via environment variables to alter the training loop.
+             <p className="mt-2 text-blue-400/80">Recommended: 5-10 rounds with 3-5 local epochs per round for optimal convergence.</p>
+           </div>
+        </CardContent>
+      </Card>
+
     </div>
   );
 }

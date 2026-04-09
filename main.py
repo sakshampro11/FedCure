@@ -39,6 +39,12 @@ def startup_event():
     print("[FedCure] Server started. Global model ready.")
 
 
+@app.get("/api/health")
+def health_check():
+    """Health check endpoint for Docker and deployment platforms."""
+    return {"status": "healthy", "service": "FedCure API"}
+
+
 # Dependency to get DB session
 def get_db():
     db = SessionLocal()

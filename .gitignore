@@ -20,6 +20,27 @@ models/
 *.pt
 *.pth
 
+# Data artifacts
+data/*.data
+data/heart_disease_clean.csv
+data/baseline_accuracy.txt
+# Keeping hospital_X.csv if you want them in repo for quick demo, 
+# but usually better to ignore them too.
+# data/hospital_*.csv
+
+# Frontend
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/build/
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/.env.production.local
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+
 # OS specific files
 .DS_Store
 Thumbs.db

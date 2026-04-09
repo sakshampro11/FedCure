@@ -13,6 +13,8 @@ import {
 
 import { HeroScroller } from "@/components/hero-scroller";
 
+import { Logo } from "@/components/logo";
+
 export default function Home() {
   return (
     <div className="flex flex-col items-center bg-white min-h-screen text-slate-900 selection:bg-blue-100 w-full animate-in fade-in slide-in-from-bottom-8 duration-700">
@@ -20,14 +22,9 @@ export default function Home() {
       {/* Navigation Bar - Liquid Glass Pill (Light Version) */}
       <header className="fixed top-6 left-1/2 -translate-x-1/2 z-50 w-[95%] max-w-5xl rounded-2xl border border-slate-200/60 bg-white/70 backdrop-blur-xl backdrop-saturate-150 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)]">
         <div className="px-4 md:px-6 h-16 flex items-center justify-between">
-          <div className="flex flex-row items-center gap-2">
-            <div className="bg-blue-600/10 p-1.5 rounded-lg border border-blue-600/20">
-              <Activity className="h-5 w-5 text-blue-600" />
-            </div>
-            <span className="text-xl font-bold tracking-tight text-slate-900">
-              Fed<span className="text-blue-600">Cure</span>
-            </span>
-          </div>
+          <Link href="/">
+            <Logo />
+          </Link>
           
           <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-600">
             <Link href="#features" className="hover:text-blue-600 transition-colors">Features</Link>

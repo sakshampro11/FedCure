@@ -211,6 +211,28 @@ def get_training_status(db: Session = Depends(get_db)):
     }
 
 
+@app.get("/api/training/global-model")
+def get_global_model():
+    """
+    Download the current global model weights.
+    FL clients call this before each local training round.
+    """
+    try:
+        model = federated.load_global_model()
+    except FileNotFoundError:
+        raise HTTPException(status_code=503, detail="Global model not available yet.")
+
+    # Serialize weights to JSON-friendly format (tensors → lists)
+    weights = {}
+    for name, param in model.state_dict().items():
+        weights[name] = param.cpu().tolist()
+
+    return {
+        "version": f"v{federated.get_current_version()}",
+        "weights": weights,
+    }
+
+
 # ──────────────────────────────────────────────
 # Dashboard Endpoint
 # ──────────────────────────────────────────────

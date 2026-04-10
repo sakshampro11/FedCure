@@ -225,18 +225,24 @@ def get_global_model():
     """
     try:
         model = federated.load_global_model()
+        
+        # Serialize weights to JSON-friendly format (tensors → lists)
+        weights = {}
+        for name, param in model.state_dict().items():
+            weights[name] = param.cpu().tolist()
+
+        return {
+            "version": f"v{federated.get_current_version()}",
+            "weights": weights,
+        }
     except FileNotFoundError:
         raise HTTPException(status_code=503, detail="Global model not available yet.")
-
-    # Serialize weights to JSON-friendly format (tensors → lists)
-    weights = {}
-    for name, param in model.state_dict().items():
-        weights[name] = param.cpu().tolist()
-
-    return {
-        "version": f"v{federated.get_current_version()}",
-        "weights": weights,
-    }
+    except Exception as e:
+        print(f"[ERROR] Failed to load/serialize global model: {e}")
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Error processing global model: {str(e)}. This might be a version mismatch. Try restarting the server."
+        )
 
 
 # ──────────────────────────────────────────────

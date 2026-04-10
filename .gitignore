@@ -1,7 +1,7 @@
 # Ignore specific Hackathon Documents and Datasets
 /FedCure_Abstract_HackBVP.pdf
 /FedCure_Short_PRD.docx
-/heart_disease_data.csv
+heart_disease_data.csv
 
 # Python Caches & Virtual Environments
 __pycache__/

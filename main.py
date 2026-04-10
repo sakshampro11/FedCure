@@ -292,10 +292,10 @@ def predict_heart_disease(vitals: PatientVitals):
     ]
     input_tensor = torch.tensor([features], dtype=torch.float32)
 
-    # Simple normalization (approximate ranges from the dataset)
-    mins = torch.tensor([29, 0, 0, 94, 126, 0, 0, 71, 0, 0.0, 0, 0, 0], dtype=torch.float32)
-    maxs = torch.tensor([77, 1, 3, 200, 564, 1, 2, 202, 1, 6.2, 2, 4, 3], dtype=torch.float32)
-    input_tensor = (input_tensor - mins) / (maxs - mins + 1e-8)
+    # Standard scaling based on the dataset's exact mean and std (matching training setup)
+    means = torch.tensor([54.366, 0.683, 0.967, 131.624, 246.264, 0.149, 0.528, 149.647, 0.327, 1.040, 1.399, 0.729, 2.314], dtype=torch.float32)
+    stds = torch.tensor([9.067, 0.465, 1.030, 17.509, 51.745, 0.356, 0.525, 22.867, 0.469, 1.159, 0.615, 1.021, 0.611], dtype=torch.float32)
+    input_tensor = (input_tensor - means) / (stds + 1e-8)
 
     # Inference
     with torch.no_grad():

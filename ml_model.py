@@ -7,18 +7,24 @@ class HeartDiseaseModel(nn.Module):
     PyTorch neural network for heart disease prediction.
     Input: 13 clinical features from the UCI Heart Disease dataset.
     Output: Risk score between 0 and 1 (sigmoid).
+
+    Architecture is intentionally compact (13→32→16→1) with BatchNorm
+    and Dropout so that it stays well-calibrated when each hospital
+    fine-tunes on only ~150 samples during federated rounds.
     """
 
     def __init__(self):
         super(HeartDiseaseModel, self).__init__()
         self.network = nn.Sequential(
-            nn.Linear(13, 128),
+            nn.Linear(13, 32),
+            nn.BatchNorm1d(32),
             nn.ReLU(),
-            nn.Linear(128, 64),
+            nn.Dropout(0.3),
+            nn.Linear(32, 16),
+            nn.BatchNorm1d(16),
             nn.ReLU(),
-            nn.Linear(64, 32),
-            nn.ReLU(),
-            nn.Linear(32, 1),
+            nn.Dropout(0.3),
+            nn.Linear(16, 1),
             nn.Sigmoid()
         )
 

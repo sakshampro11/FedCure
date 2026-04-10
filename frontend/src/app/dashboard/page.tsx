@@ -456,10 +456,11 @@ export default function DashboardPage() {
                <pre className="text-sm text-blue-300 font-mono bg-slate-900 overflow-x-auto p-4 rounded border border-slate-700 shadow-inner">
 {`export API_KEY="<your-api-key>"
 export HOSPITAL_ID="<your-hospital-id>"
-export SERVER_URL="http://localhost:8000"
+export SERVER_URL="http://host.docker.internal:8000" # Or http://127.0.0.1:8000 if using Linux --net=host
 
-docker build -t fedcure-client ./client
-docker run --net=host --env API_KEY=$API_KEY --env HOSPITAL_ID=$HOSPITAL_ID --env SERVER_URL=$SERVER_URL fedcure-client`}
+# Run from the project root directory (where heart_disease_data.csv is located)
+docker build -t fedcure-client -f client/Dockerfile .
+docker run --env API_KEY=$API_KEY --env HOSPITAL_ID=$HOSPITAL_ID --env SERVER_URL=$SERVER_URL fedcure-client`}
                </pre>
              </div>
              
@@ -468,15 +469,16 @@ docker run --net=host --env API_KEY=$API_KEY --env HOSPITAL_ID=$HOSPITAL_ID --en
                <pre className="text-sm text-blue-300 font-mono bg-slate-900 overflow-x-auto p-4 rounded border border-slate-700 shadow-inner">
 {`$env:API_KEY="<your-api-key>"
 $env:HOSPITAL_ID="<your-hospital-id>"
-$env:SERVER_URL="http://localhost:8000"
+$env:SERVER_URL="http://host.docker.internal:8000"
 
-docker build -t fedcure-client ./client
+# Run from the project root directory (where heart_disease_data.csv is located)
+docker build -t fedcure-client -f client/Dockerfile .
 docker run --env API_KEY=$env:API_KEY --env HOSPITAL_ID=$env:HOSPITAL_ID --env SERVER_URL=$env:SERVER_URL fedcure-client`}
                </pre>
              </div>
            </div>
            <div className="text-xs text-slate-400 mt-4 border-t border-slate-800 pt-4">
-             Ensure <code className="bg-slate-800 px-1 py-0.5 rounded text-slate-300">heart_disease_data.csv</code> is placed inside the client directory. You can customize <code className="bg-slate-800 px-1 py-0.5 rounded text-slate-300">NUM_ROUNDS</code> and <code className="bg-slate-800 px-1 py-0.5 rounded text-slate-300">EPOCHS_PER_ROUND</code> via environment variables to alter the training loop.
+             Ensure you run the build command from the root directory so <code className="bg-slate-800 px-1 py-0.5 rounded text-slate-300">heart_disease_data.csv</code> is included. You can customize <code className="bg-slate-800 px-1 py-0.5 rounded text-slate-300">NUM_ROUNDS</code> and <code className="bg-slate-800 px-1 py-0.5 rounded text-slate-300">EPOCHS_PER_ROUND</code> via environment variables to alter the training loop.
              <p className="mt-2 text-blue-400/80">Recommended: 5-10 rounds with 3-5 local epochs per round for optimal convergence.</p>
            </div>
         </CardContent>

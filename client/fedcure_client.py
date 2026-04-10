@@ -48,18 +48,20 @@ EPOCHS_PER_ROUND = int(os.getenv("EPOCHS_PER_ROUND", "3"))
 # ──────────────────────────────────────────────
 
 class HeartDiseaseModel(nn.Module):
-    """Same architecture as the server — 13 → 128 → 64 → 32 → 1 with Sigmoid."""
+    """Same architecture as the server — 13 → 32 → 16 → 1 with BatchNorm, Dropout, Sigmoid."""
 
     def __init__(self):
         super(HeartDiseaseModel, self).__init__()
         self.network = nn.Sequential(
-            nn.Linear(13, 128),
+            nn.Linear(13, 32),
+            nn.BatchNorm1d(32),
             nn.ReLU(),
-            nn.Linear(128, 64),
+            nn.Dropout(0.3),
+            nn.Linear(32, 16),
+            nn.BatchNorm1d(16),
             nn.ReLU(),
-            nn.Linear(64, 32),
-            nn.ReLU(),
-            nn.Linear(32, 1),
+            nn.Dropout(0.3),
+            nn.Linear(16, 1),
             nn.Sigmoid()
         )
 
@@ -143,7 +145,7 @@ def submit_weights(hospital_id, weights, local_accuracy):
 # Local Training
 # ──────────────────────────────────────────────
 
-def train_local(model, X, y, epochs, lr=0.001, batch_size=32):
+def train_local(model, X, y, epochs, lr=0.0005, batch_size=32):
     """Train the model on local hospital data and return accuracy."""
     X_tensor = torch.tensor(X, dtype=torch.float32)
     y_tensor = torch.tensor(y, dtype=torch.float32)
@@ -152,7 +154,7 @@ def train_local(model, X, y, epochs, lr=0.001, batch_size=32):
     loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
     criterion = nn.BCELoss()
-    optimizer = optim.Adam(model.parameters(), lr=lr)
+    optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=0.01)
 
     model.train()
     for epoch in range(epochs):
@@ -161,6 +163,8 @@ def train_local(model, X, y, epochs, lr=0.001, batch_size=32):
             preds = model(batch_X)
             loss = criterion(preds, batch_y)
             loss.backward()
+            # Clip gradients to prevent weight explosion
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
             optimizer.step()
 
     # Calculate accuracy
@@ -185,9 +189,12 @@ def add_dp_noise(weights, sigma=0.01):
     """Add Gaussian noise to weights for differential privacy simulation."""
     noisy = {}
     for name, values in weights.items():
-        tensor = torch.tensor(values, dtype=torch.float32)
-        noise = torch.randn_like(tensor) * sigma
-        noisy[name] = (tensor + noise).tolist()
+        tensor = torch.tensor(values)
+        if tensor.is_floating_point():
+            noise = torch.randn_like(tensor) * sigma
+            noisy[name] = (tensor + noise).tolist()
+        else:
+            noisy[name] = values  # Skip integer params (e.g. num_batches_tracked)
     return noisy
 
 

@@ -52,13 +52,22 @@ def aggregate_weights(weight_updates_list):
     # Convert list-of-floats back to tensors
     tensor_dicts = []
     for w in weight_updates_list:
-        tensor_dicts.append({k: torch.tensor(v, dtype=torch.float32) for k, v in w.items()})
+        td = {}
+        for k, v in w.items():
+            t = torch.tensor(v)
+            td[k] = t.float() if not t.is_floating_point() else t
+        tensor_dicts.append(td)
 
     # Average all weights
     avg_weights = {}
     for key in tensor_dicts[0].keys():
         stacked = torch.stack([td[key] for td in tensor_dicts])
-        avg_weights[key] = torch.mean(stacked, dim=0)
+        avg = torch.mean(stacked, dim=0)
+        # Restore integer dtype for params like num_batches_tracked
+        orig = torch.tensor(weight_updates_list[0][key])
+        if not orig.is_floating_point():
+            avg = avg.long()
+        avg_weights[key] = avg
 
     return avg_weights
 
@@ -81,7 +90,7 @@ def save_global_model(avg_weights, version=None):
     file_path = os.path.join(MODELS_DIR, f"global_model_v{version}.pt")
     torch.save(avg_weights, file_path)
     _current_version = version
-    print(f"[FedCure] Saved global model v{version} → {file_path}")
+    print(f"[FedCure] Saved global model v{version} -> {file_path}")
     return version, file_path
 
 

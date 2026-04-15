@@ -317,7 +317,7 @@ export default function DashboardPage() {
                   <LineChart data={metrics.history} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" opacity={0.5} />
                     <XAxis dataKey="round" label={{ value: 'Round', position: 'insideBottomRight', offset: -5 }} />
-                    <YAxis domain={[0, 100]} label={{ value: 'Accuracy %', angle: -90, position: 'insideLeft' }} />
+                    <YAxis domain={[60, 100]} label={{ value: 'Accuracy %', angle: -90, position: 'insideLeft' }} />
                     <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
                     <Legend verticalAlign="top" height={36} />
                     <Line type="monotone" name="Federated Model" dataKey="federatedModel" stroke="#2563eb" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} />

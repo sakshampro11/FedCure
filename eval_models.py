@@ -3,11 +3,12 @@ import os
 import numpy as np
 from ml_model import create_model
 
-means = np.array([54.366, 0.683, 0.967, 131.624, 246.264, 0.149, 0.528, 149.647, 0.327, 1.040, 1.399, 0.729, 2.314])
-stds = np.array([9.067, 0.465, 1.030, 17.509, 51.745, 0.356, 0.525, 22.867, 0.469, 1.159, 0.615, 1.021, 0.611])
+# 11-feature means/stds from the combined Heart Statlog Cleveland Hungary dataset (~1190 samples)
+means = np.array([53.720, 0.764, 3.233, 132.263, 245.063, 0.213, 0.698, 139.733, 0.387, 0.923, 1.624])
+stds = np.array([9.358, 0.425, 0.935, 17.964, 52.930, 0.410, 0.870, 25.518, 0.487, 1.086, 0.610])
 
-# Healthy User (row target=0 from dataset)
-features = [48, 1, 0, 130, 256, 1, 0, 150, 1, 0, 2, 2, 3]
+# Healthy User (11 features: age,sex,cp,trestbps,chol,fbs,restecg,thalach,exang,oldpeak,slope)
+features = [29, 0, 0, 110, 200, 0, 0, 180, 0, 0.0, 2]
 X_scaled = (np.array(features) - means) / (stds + 1e-8)
 X_tensor = torch.tensor([X_scaled], dtype=torch.float32)
 

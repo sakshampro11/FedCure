@@ -12,7 +12,7 @@ def train_local(dataset_path, model=None, epochs=10, lr=0.001, batch_size=32):
     Train the heart disease model on a local CSV dataset.
 
     Args:
-        dataset_path: path to CSV file with 13 features + target column.
+        dataset_path: path to CSV file with 11 features + target column.
         model: optional pre-existing model to continue training. If None, creates a new one.
         epochs: number of training epochs.
         lr: learning rate.

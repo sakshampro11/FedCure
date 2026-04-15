@@ -23,7 +23,7 @@ from torch.utils.data import DataLoader, TensorDataset
 
 SERVER_URL = "http://localhost:8000"
 NUM_ROUNDS = 10
-EPOCHS_PER_ROUND = 3
+EPOCHS_PER_ROUND = 5
 HOSPITAL_DATA = [
     "data/hospital_1.csv",
     "data/hospital_2.csv",
@@ -58,7 +58,7 @@ def train_local(model, X, y, epochs=3):
     X_t = torch.tensor(X, dtype=torch.float32)
     y_t = torch.tensor(y, dtype=torch.float32)
     loader = DataLoader(TensorDataset(X_t, y_t), batch_size=32, shuffle=True)
-    opt = optim.Adam(model.parameters(), lr=0.0005, weight_decay=0.01)
+    opt = optim.Adam(model.parameters(), lr=0.001, weight_decay=0.001)
     criterion = nn.BCELoss()
     model.train()
     for _ in range(epochs):
@@ -133,7 +133,7 @@ def main():
             weights = {}
             for name, param in model.state_dict().items():
                 if param.is_floating_point():
-                    weights[name] = (param + torch.randn_like(param) * 0.01).tolist()
+                    weights[name] = (param + torch.randn_like(param) * 0.005).tolist()
                 else:
                     weights[name] = param.tolist()
 

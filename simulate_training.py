@@ -29,20 +29,20 @@ X = scaler.fit_transform(X)
 
 NUM_HOSPITALS = 4
 NUM_ROUNDS = 10
-EPOCHS_PER_ROUND = 3
+EPOCHS_PER_ROUND = 5
 
 # ── Initialize global model ──
 federated.initialize_global_model()
 
 
-def train_local(model, X_local, y_local, epochs=3, lr=0.0005):
+def train_local(model, X_local, y_local, epochs=5, lr=0.001):
     X_tensor = torch.tensor(X_local, dtype=torch.float32)
     y_tensor = torch.tensor(y_local, dtype=torch.float32)
     dataset = TensorDataset(X_tensor, y_tensor)
     loader = DataLoader(dataset, batch_size=32, shuffle=True)
 
     criterion = nn.BCELoss()
-    optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=0.01)
+    optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=0.001)
 
     model.train()
     for _ in range(epochs):
@@ -91,7 +91,7 @@ for round_num in range(1, NUM_ROUNDS + 1):
         weights = {}
         for name, param in local_model.state_dict().items():
             if param.is_floating_point():
-                noisy = param + torch.randn_like(param) * 0.01
+                noisy = param + torch.randn_like(param) * 0.005
                 weights[name] = noisy.tolist()
             else:
                 weights[name] = param.tolist()

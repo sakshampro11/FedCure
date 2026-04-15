@@ -48,12 +48,12 @@ EPOCHS_PER_ROUND = int(os.getenv("EPOCHS_PER_ROUND", "3"))
 # ──────────────────────────────────────────────
 
 class HeartDiseaseModel(nn.Module):
-    """Same architecture as the server — 13 → 32 → 16 → 1 with BatchNorm, Dropout, Sigmoid."""
+    """Same architecture as the server — 11 → 32 → 16 → 1 with BatchNorm, Dropout, Sigmoid."""
 
     def __init__(self):
         super(HeartDiseaseModel, self).__init__()
         self.network = nn.Sequential(
-            nn.Linear(13, 32),
+            nn.Linear(11, 32),
             nn.BatchNorm1d(32),
             nn.ReLU(),
             nn.Dropout(0.3),

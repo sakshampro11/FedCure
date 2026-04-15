@@ -1,8 +1,8 @@
 """
-Train a centralized baseline model on the full UCI Heart Disease dataset.
+Train a centralized baseline model on the full combined Heart Disease dataset.
 
 This serves as a comparison point for the federated learning approach.
-The model uses the same HeartDiseaseModel architecture (13 -> 128 -> 64 -> 32 -> 1).
+The model uses the same HeartDiseaseModel architecture (11 -> 32 -> 16 -> 1).
 """
 
 import os
@@ -80,7 +80,7 @@ def main():
     print(f"\n{'='*60}")
     print("  CENTRALIZED BASELINE TRAINING")
     print(f"{'='*60}")
-    print(f"  Architecture:  13 -> 128 -> 64 -> 32 -> 1 (Sigmoid)")
+    print(f"  Architecture:  11 -> 32 -> 16 -> 1 (Sigmoid)")
     print(f"  Epochs:        {EPOCHS}")
     print(f"  Batch size:    {BATCH_SIZE}")
     print(f"  Learning rate: {LEARNING_RATE}")

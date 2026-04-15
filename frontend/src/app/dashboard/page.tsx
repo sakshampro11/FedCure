@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
-import { ShieldCheck, Activity, Users, Settings, Database, Server, RefreshCw, ChevronRight, ChevronLeft, HeartPulse, UserCircle, Stethoscope, ClipboardList } from "lucide-react";
+import { ShieldCheck, Activity, Users, Settings, Database, Server, RefreshCw, ChevronRight, ChevronLeft, HeartPulse, UserCircle, Stethoscope } from "lucide-react";
 import { RiskGauge } from "@/components/RiskGauge";
 
 export default function DashboardPage() {
@@ -34,7 +34,7 @@ export default function DashboardPage() {
   const [form, setForm] = useState({
     age: "",
     sex: "1", // 1: male, 0: female
-    cp: "0",
+    cp: "1",  // 1-4 in combined dataset
     trestbps: "",
     chol: "",
     fbs: "0",
@@ -42,9 +42,7 @@ export default function DashboardPage() {
     thalach: "",
     exang: "0",
     oldpeak: "",
-    slope: "1",
-    ca: "0",
-    thal: "2"
+    slope: "1"
   });
 
   const fetchMetrics = async () => {
@@ -109,9 +107,7 @@ export default function DashboardPage() {
         thalach: Number(form.thalach),
         exang: Number(form.exang),
         oldpeak: Number(form.oldpeak),
-        slope: Number(form.slope),
-        ca: Number(form.ca),
-        thal: Number(form.thal)
+        slope: Number(form.slope)
       };
       const res = await predictHeartDisease(submitData);
       setPredictionResult({ score: res.risk_score, level: res.risk_level });
@@ -144,6 +140,18 @@ export default function DashboardPage() {
                 <SelectContent>
                   <SelectItem value="1">Male</SelectItem>
                   <SelectItem value="0">Female</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-4 md:col-span-2">
+              <Label className="text-base">Chest Pain Type</Label>
+              <Select value={form.cp} onValueChange={(v) => handlePredictChange("cp", v)}>
+                <SelectTrigger className="h-12 bg-white"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">Typical Angina</SelectItem>
+                  <SelectItem value="2">Atypical Angina</SelectItem>
+                  <SelectItem value="3">Non-anginal Pain</SelectItem>
+                  <SelectItem value="4">Asymptomatic</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -212,46 +220,6 @@ export default function DashboardPage() {
                   <SelectItem value="0">Upsloping (0)</SelectItem>
                   <SelectItem value="1">Flat (1)</SelectItem>
                   <SelectItem value="2">Downsloping (2)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        );
-      case "assess":
-        return (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-in slide-in-from-right-4 duration-300">
-            <div className="space-y-2">
-              <Label>Chest Pain Type</Label>
-              <Select value={form.cp} onValueChange={(v) => handlePredictChange("cp", v)}>
-                <SelectTrigger className="bg-white"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="0">Typical Angina (0)</SelectItem>
-                  <SelectItem value="1">Atypical Angina (1)</SelectItem>
-                  <SelectItem value="2">Non-anginal Pain (2)</SelectItem>
-                  <SelectItem value="3">Asymptomatic (3)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Major Vessels (0-3)</Label>
-              <Select value={form.ca} onValueChange={(v) => handlePredictChange("ca", v)}>
-                <SelectTrigger className="bg-white"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="0">0</SelectItem>
-                  <SelectItem value="1">1</SelectItem>
-                  <SelectItem value="2">2</SelectItem>
-                  <SelectItem value="3">3</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Thalassemia</Label>
-              <Select value={form.thal} onValueChange={(v) => handlePredictChange("thal", v)}>
-                <SelectTrigger className="bg-white"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="1">Normal (1)</SelectItem>
-                  <SelectItem value="2">Fixed Defect (2)</SelectItem>
-                  <SelectItem value="3">Reversable Defect (3)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -419,10 +387,9 @@ export default function DashboardPage() {
             <div className="space-y-8">
               <div className="flex flex-wrap gap-2 p-1 bg-slate-200/50 rounded-xl">
                 {[
-                  { id: "identity", label: "Identity", icon: UserCircle },
+                  { id: "identity", label: "Patient Info", icon: UserCircle },
                   { id: "vitals", label: "Vital Signs", icon: Stethoscope },
                   { id: "stress", label: "Cardiac Stress", icon: Activity },
-                  { id: "assess", label: "Special Tests", icon: ClipboardList },
                 ].map((t) => (
                   <button
                     key={t.id}
@@ -446,19 +413,19 @@ export default function DashboardPage() {
                 <div className="flex justify-between pt-4 border-t border-slate-200">
                   {activeTab !== "identity" && (
                     <Button type="button" variant="outline" onClick={() => {
-                        const tabs = ["identity", "vitals", "stress", "assess"];
+                        const tabs = ["identity", "vitals", "stress"];
                         setActiveTab(tabs[tabs.indexOf(activeTab) - 1]);
                     }}>
                       <ChevronLeft className="w-4 h-4 mr-2" /> Previous Step
                     </Button>
                   )}
                   <div className="flex-1" />
-                  {activeTab !== "assess" ? (
+                  {activeTab !== "stress" ? (
                     <Button type="button" className="bg-blue-600 hover:bg-blue-700 text-white" onClick={() => {
-                        const tabs = ["identity", "vitals", "stress", "assess"];
+                        const tabs = ["identity", "vitals", "stress"];
                         setActiveTab(tabs[tabs.indexOf(activeTab) + 1]);
                     }}>
-                      Next: {activeTab === "stress" ? "Special Tests" : "Continue"} <ChevronRight className="w-4 h-4 ml-2" />
+                      Next: {activeTab === "identity" ? "Vital Signs" : "Cardiac Stress"} <ChevronRight className="w-4 h-4 ml-2" />
                     </Button>
                   ) : (
                     <Button type="submit" size="lg" disabled={predicting} className="bg-red-600 hover:bg-red-700 text-white font-bold">
@@ -481,7 +448,7 @@ export default function DashboardPage() {
                   <div className="grid grid-cols-2 gap-4">
                      <div className="p-4 rounded-xl bg-slate-100 border text-center">
                         <Label className="text-xs uppercase text-slate-400 font-black">Accuracy</Label>
-                        <p className="text-2xl font-black">94.2%</p>
+                        <p className="text-2xl font-black">82.3%</p>
                      </div>
                      <div className="p-4 rounded-xl bg-slate-100 border text-center">
                         <Label className="text-xs uppercase text-slate-400 font-black">Privacy</Label>

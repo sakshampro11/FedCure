@@ -80,8 +80,6 @@ class PatientVitals(BaseModel):
     exang: int
     oldpeak: float
     slope: int
-    ca: int
-    thal: int
 
 
 class WeightSubmission(BaseModel):
@@ -290,17 +288,18 @@ def predict_heart_disease(vitals: PatientVitals):
     except FileNotFoundError:
         raise HTTPException(status_code=503, detail="Global model not available. Server may still be initializing.")
 
-    # Convert input to tensor (same 13 features as training data)
+    # Convert input to tensor (same 11 features as training data)
     features = [
         vitals.age, vitals.sex, vitals.cp, vitals.trestbps, vitals.chol,
         vitals.fbs, vitals.restecg, vitals.thalach, vitals.exang,
-        vitals.oldpeak, vitals.slope, vitals.ca, vitals.thal
+        vitals.oldpeak, vitals.slope
     ]
     input_tensor = torch.tensor([features], dtype=torch.float32)
 
     # Standard scaling based on the dataset's exact mean and std (matching training setup)
-    means = torch.tensor([54.366, 0.683, 0.967, 131.624, 246.264, 0.149, 0.528, 149.647, 0.327, 1.040, 1.399, 0.729, 2.314], dtype=torch.float32)
-    stds = torch.tensor([9.067, 0.465, 1.030, 17.509, 51.745, 0.356, 0.525, 22.867, 0.469, 1.159, 0.615, 1.021, 0.611], dtype=torch.float32)
+    # These values are computed by data/prepare_new_dataset.py on the ~1190-sample combined dataset
+    means = torch.tensor([53.720, 0.764, 3.233, 132.263, 245.063, 0.213, 0.698, 139.733, 0.387, 0.923, 1.624], dtype=torch.float32)
+    stds = torch.tensor([9.358, 0.425, 0.935, 17.964, 52.930, 0.410, 0.870, 25.518, 0.487, 1.086, 0.610], dtype=torch.float32)
     input_tensor = (input_tensor - means) / (stds + 1e-8)
 
     # Inference

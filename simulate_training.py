@@ -127,10 +127,10 @@ print(f"  Logit range: [{raw_logits.min():.2f}, {raw_logits.max():.2f}]")
 print(f"  Saturated (>0.9999): {(preds > 0.9999).sum()}/{len(preds)}")
 print(f"  Saturated (<0.0001): {(preds < 0.0001).sum()}/{len(preds)}")
 
-# Test a healthy-looking patient
+# Test a healthy-looking patient (11 features: age,sex,cp,trestbps,chol,fbs,restecg,thalach,exang,oldpeak,slope)
 print("\n-- Demo predictions --")
-healthy = np.array([[29, 0, 0, 110, 200, 0, 0, 180, 0, 0.0, 2, 0, 1]])
-sick    = np.array([[65, 1, 3, 160, 330, 1, 2, 100, 1, 4.0, 0, 3, 3]])
+healthy = np.array([[29, 0, 0, 110, 200, 0, 0, 180, 0, 0.0, 2]])
+sick    = np.array([[65, 1, 3, 160, 330, 1, 2, 100, 1, 4.0, 0]])
 
 healthy_scaled = torch.tensor(scaler.transform(healthy), dtype=torch.float32)
 sick_scaled    = torch.tensor(scaler.transform(sick), dtype=torch.float32)

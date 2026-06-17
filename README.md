@@ -65,7 +65,7 @@ FedCure/
 │   ├── main.py                  # FastAPI app, routes, and FL round logic
 │   ├── db_models.py             # SQLAlchemy database models
 │   ├── federated.py             # FedAvg aggregation logic
-│   └── nn_model.py              # HeartDiseaseModel (13→128→64→32→1)
+│   └── nn_model.py              # HeartDiseaseModel (11→32→16→1 with BatchNorm + Dropout)
 │
 ├── client/                      # FL Hospital Client
 │   ├── Dockerfile               # Client Docker image (distributed to hospitals)
@@ -282,36 +282,4 @@ docker-compose up --build
 
 > The server tracks **unique hospitals** per round — re-submissions from the same hospital in the same round are deduplicated, ensuring fair aggregation.
 
----
 
-## Deployment
-
-### Backend (Railway)
-- Push to GitHub and connect to [Railway](https://railway.app)
-- Railway auto-detects `railway.json` and builds from `server/Dockerfile`
-- The start command is `uvicorn server.main:app --host 0.0.0.0 --port $PORT`
-- Set environment variables (`DATABASE_URL`, `JWT_SECRET`, `ALLOWED_ORIGINS`) in the Railway dashboard
-
-### Frontend (Vercel)
-- Connect repo to [Vercel](https://vercel.com)
-- Vercel auto-detects `vercel.json`
-- Set `NEXT_PUBLIC_API_URL` to your Railway backend URL in Vercel's environment settings
-
----
-
-## Recent Changes
-
-| Change | Description |
-|--------|-------------|
-| **Server modularised into `server/`** | `main.py`, `db_models.py`, `federated.py`, `nn_model.py` and `Dockerfile` are now under `server/`. Run the backend with `uvicorn server.main:app --reload` from the project root. |
-| **Dependency-free `.env` loader** | Both `server/main.py` and `client/fedcure_client.py` load `.env` files without requiring `python-dotenv`, using a built-in parser. |
-| **DP noise bug fix** | Fixed a `TypeError: iteration over a 0-d tensor` in the Differential Privacy noise function in `client/fedcure_client.py`. |
-| **Hospital deduplication fix** | Fixed a bug where multiple weight submissions from the same hospital in the same round were counted as separate participants, inflating the hospital count on the dashboard. |
-| **Baseline accuracy removed** | The centralized baseline accuracy metric has been fully removed — from `server/db_models.py`, `server/main.py`, and the frontend dashboard (`frontend/src/app/dashboard/page.tsx`). FedCure now purely tracks federated model accuracy. |
-| **Legacy scripts cleaned up** | Old scripts (`train_baseline.py`, `split_for_hospitals.py`, `eval_models.py`, `simulate_training.py`, `diagnose_model.py`, etc.) have been removed. The only setup script remaining is `temp_scripts/prepare_dataset.py`. |
-
----
-
-## License
-
-MIT License — Built for HackBVP 7.0 Hackathon

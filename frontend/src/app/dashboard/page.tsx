@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { ShieldCheck, Activity, Users, Settings, Database, Server, RefreshCw, ChevronRight, ChevronLeft, HeartPulse, UserCircle, Stethoscope } from "lucide-react";
 import { RiskGauge } from "@/components/RiskGauge";
+import { InfoTip } from "@/components/info-tip";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -33,16 +34,16 @@ export default function DashboardPage() {
   const [predictionResult, setPredictionResult] = useState<{ score: number, level: string } | null>(null);
   const [form, setForm] = useState({
     age: "",
-    sex: "1", // 1: male, 0: female
-    cp: "1",  // 1-4 in combined dataset
+    sex: "",
+    cp: "",
     trestbps: "",
     chol: "",
-    fbs: "0",
-    restecg: "0",
+    fbs: "",
+    restecg: "",
     thalach: "",
-    exang: "0",
+    exang: "",
     oldpeak: "",
-    slope: "1"
+    slope: ""
   });
 
   const fetchMetrics = async () => {
@@ -97,16 +98,16 @@ export default function DashboardPage() {
     try {
       const submitData = {
         age: Number(form.age),
-        sex: Number(form.sex),
-        cp: Number(form.cp),
+        sex: form.sex === "Male" ? 1 : 0,
+        cp: form.cp === "Typical Angina" ? 1 : form.cp === "Atypical Angina" ? 2 : form.cp === "Non-anginal Pain" ? 3 : 4,
         trestbps: Number(form.trestbps),
         chol: Number(form.chol),
-        fbs: Number(form.fbs),
-        restecg: Number(form.restecg),
+        fbs: form.fbs === "Yes" ? 1 : 0,
+        restecg: form.restecg === "Normal" ? 0 : form.restecg === "ST-T Wave Abnormality" ? 1 : 2,
         thalach: Number(form.thalach),
-        exang: Number(form.exang),
+        exang: form.exang === "Yes" ? 1 : 0,
         oldpeak: Number(form.oldpeak),
-        slope: Number(form.slope)
+        slope: form.slope === "Upsloping" ? 0 : form.slope === "Flat" ? 1 : 2
       };
       const res = await predictHeartDisease(submitData);
       setPredictionResult({ score: res.risk_score, level: res.risk_level });
@@ -129,28 +130,28 @@ export default function DashboardPage() {
         return (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-in slide-in-from-right-4 duration-300">
             <div className="space-y-4">
-              <Label className="text-base">Patient Age</Label>
+              <Label className="text-base flex items-center">Patient Age <InfoTip text="Patient's age in years" /></Label>
               <Input type="number" required className="h-12 bg-white" placeholder="e.g. 54" value={form.age} onChange={(e) => handlePredictChange("age", e.target.value)} />
             </div>
             <div className="space-y-4">
-              <Label className="text-base">Sex</Label>
-              <Select value={form.sex} onValueChange={(v) => handlePredictChange("sex", v)}>
-                <SelectTrigger className="h-12 bg-white"><SelectValue /></SelectTrigger>
+              <Label className="text-base flex items-center">Sex <InfoTip text="Biological sex: Male or Female" /></Label>
+              <Select value={form.sex || undefined} onValueChange={(v) => handlePredictChange("sex", v)}>
+                <SelectTrigger className="h-12 bg-white"><SelectValue placeholder="Select sex" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="1">Male</SelectItem>
-                  <SelectItem value="0">Female</SelectItem>
+                  <SelectItem value="Male">Male</SelectItem>
+                  <SelectItem value="Female">Female</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-4 md:col-span-2">
-              <Label className="text-base">Chest Pain Type</Label>
-              <Select value={form.cp} onValueChange={(v) => handlePredictChange("cp", v)}>
-                <SelectTrigger className="h-12 bg-white"><SelectValue /></SelectTrigger>
+              <Label className="text-base flex items-center">Chest Pain Type <InfoTip text="Type of chest pain experienced. Typical Angina is the most classic cardiac symptom." /></Label>
+              <Select value={form.cp || undefined} onValueChange={(v) => handlePredictChange("cp", v)}>
+                <SelectTrigger className="h-12 bg-white"><SelectValue placeholder="Select type" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="1">Typical Angina</SelectItem>
-                  <SelectItem value="2">Atypical Angina</SelectItem>
-                  <SelectItem value="3">Non-anginal Pain</SelectItem>
-                  <SelectItem value="4">Asymptomatic</SelectItem>
+                  <SelectItem value="Typical Angina">Typical Angina</SelectItem>
+                  <SelectItem value="Atypical Angina">Atypical Angina</SelectItem>
+                  <SelectItem value="Non-anginal Pain">Non-anginal Pain</SelectItem>
+                  <SelectItem value="Asymptomatic">Asymptomatic</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -160,31 +161,31 @@ export default function DashboardPage() {
         return (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-in slide-in-from-right-4 duration-300">
             <div className="space-y-2">
-              <Label>Resting BP (mm Hg)</Label>
+              <Label className="flex items-center">Resting BP (mm Hg) <InfoTip text="Blood pressure at rest in mm Hg (normal: ~120)" /></Label>
               <Input type="number" required placeholder="e.g. 130" className="bg-white" value={form.trestbps} onChange={(e) => handlePredictChange("trestbps", e.target.value)} />
             </div>
             <div className="space-y-2">
-              <Label>Cholesterol (mg/dl)</Label>
+              <Label className="flex items-center">Cholesterol (mg/dl) <InfoTip text="Serum cholesterol in mg/dl (desirable: <200)" /></Label>
               <Input type="number" required placeholder="e.g. 240" className="bg-white" value={form.chol} onChange={(e) => handlePredictChange("chol", e.target.value)} />
             </div>
             <div className="space-y-2">
-              <Label>Fasting Blood Sugar {">"} 120</Label>
-              <Select value={form.fbs} onValueChange={(v) => handlePredictChange("fbs", v)}>
-                <SelectTrigger className="bg-white"><SelectValue /></SelectTrigger>
+              <Label className="flex items-center">Fasting Blood Sugar {">"}  120 <InfoTip text="Is fasting blood sugar > 120 mg/dl?" /></Label>
+              <Select value={form.fbs || undefined} onValueChange={(v) => handlePredictChange("fbs", v)}>
+                <SelectTrigger className="bg-white"><SelectValue placeholder="Select" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="1">Yes</SelectItem>
-                  <SelectItem value="0">No</SelectItem>
+                  <SelectItem value="Yes">Yes</SelectItem>
+                  <SelectItem value="No">No</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Resting ECG</Label>
-              <Select value={form.restecg} onValueChange={(v) => handlePredictChange("restecg", v)}>
-                <SelectTrigger className="bg-white"><SelectValue /></SelectTrigger>
+              <Label className="flex items-center">Resting ECG <InfoTip text="Resting electrocardiographic result" /></Label>
+              <Select value={form.restecg || undefined} onValueChange={(v) => handlePredictChange("restecg", v)}>
+                <SelectTrigger className="bg-white"><SelectValue placeholder="Select result" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="0">Normal (0)</SelectItem>
-                  <SelectItem value="1">ST-T Wave (1)</SelectItem>
-                  <SelectItem value="2">LV Hypertrophy (2)</SelectItem>
+                  <SelectItem value="Normal">Normal</SelectItem>
+                  <SelectItem value="ST-T Wave Abnormality">ST-T Wave Abnormality</SelectItem>
+                  <SelectItem value="Left Ventricular Hypertrophy">Left Ventricular Hypertrophy</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -194,31 +195,31 @@ export default function DashboardPage() {
         return (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-in slide-in-from-right-4 duration-300">
             <div className="space-y-2">
-              <Label>Max Heart Rate</Label>
+              <Label className="flex items-center">Max Heart Rate <InfoTip text="Maximum heart rate achieved during exercise stress test" /></Label>
               <Input type="number" required placeholder="e.g. 150" className="bg-white" value={form.thalach} onChange={(e) => handlePredictChange("thalach", e.target.value)} />
             </div>
             <div className="space-y-2">
-              <Label>Exercise Induced Angina</Label>
-              <Select value={form.exang} onValueChange={(v) => handlePredictChange("exang", v)}>
-                <SelectTrigger className="bg-white"><SelectValue /></SelectTrigger>
+              <Label className="flex items-center">Exercise Induced Angina <InfoTip text="Chest pain triggered by physical exertion" /></Label>
+              <Select value={form.exang || undefined} onValueChange={(v) => handlePredictChange("exang", v)}>
+                <SelectTrigger className="bg-white"><SelectValue placeholder="Select" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="1">Yes</SelectItem>
-                  <SelectItem value="0">No</SelectItem>
+                  <SelectItem value="Yes">Yes</SelectItem>
+                  <SelectItem value="No">No</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>ST Depression</Label>
+              <Label className="flex items-center">ST Depression (Oldpeak) <InfoTip text="ST segment depression induced by exercise relative to rest. Higher values suggest ischemia." /></Label>
               <Input type="number" step="0.1" required placeholder="e.g. 1.2" className="bg-white" value={form.oldpeak} onChange={(e) => handlePredictChange("oldpeak", e.target.value)} />
             </div>
             <div className="space-y-2">
-              <Label>ST Slope</Label>
-              <Select value={form.slope} onValueChange={(v) => handlePredictChange("slope", v)}>
-                <SelectTrigger className="bg-white"><SelectValue /></SelectTrigger>
+              <Label className="flex items-center">ST Slope <InfoTip text="Slope of the peak exercise ST segment on ECG" /></Label>
+              <Select value={form.slope || undefined} onValueChange={(v) => handlePredictChange("slope", v)}>
+                <SelectTrigger className="bg-white"><SelectValue placeholder="Select slope" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="0">Upsloping (0)</SelectItem>
-                  <SelectItem value="1">Flat (1)</SelectItem>
-                  <SelectItem value="2">Downsloping (2)</SelectItem>
+                  <SelectItem value="Upsloping">Upsloping</SelectItem>
+                  <SelectItem value="Flat">Flat</SelectItem>
+                  <SelectItem value="Downsloping">Downsloping</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -410,21 +411,23 @@ export default function DashboardPage() {
 
                 <div className="flex justify-between pt-4 border-t border-slate-200">
                   {activeTab !== "identity" && (
-                    <Button type="button" variant="outline" onClick={() => {
+                    <button type="button" className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-200 bg-white text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors" onClick={(e) => {
+                        e.preventDefault();
                         const tabs = ["identity", "vitals", "stress"];
                         setActiveTab(tabs[tabs.indexOf(activeTab) - 1]);
                     }}>
-                      <ChevronLeft className="w-4 h-4 mr-2" /> Previous Step
-                    </Button>
+                      <ChevronLeft className="w-4 h-4" /> Previous Step
+                    </button>
                   )}
                   <div className="flex-1" />
                   {activeTab !== "stress" ? (
-                    <Button type="button" className="bg-blue-600 hover:bg-blue-700 text-white" onClick={() => {
+                    <button type="button" className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors" onClick={(e) => {
+                        e.preventDefault();
                         const tabs = ["identity", "vitals", "stress"];
                         setActiveTab(tabs[tabs.indexOf(activeTab) + 1]);
                     }}>
-                      Next: {activeTab === "identity" ? "Vital Signs" : "Cardiac Stress"} <ChevronRight className="w-4 h-4 ml-2" />
-                    </Button>
+                      Next: {activeTab === "identity" ? "Vital Signs" : "Cardiac Stress"} <ChevronRight className="w-4 h-4" />
+                    </button>
                   ) : (
                     <Button type="submit" size="lg" disabled={predicting} className="bg-red-600 hover:bg-red-700 text-white font-bold">
                       {predicting ? "Analyzing Patterns..." : "Calculate Risk Score"}
@@ -481,19 +484,28 @@ export default function DashboardPage() {
         <CardContent className="pt-2 space-y-4">
           <div className="bg-slate-800/50 p-4 rounded-md border border-slate-700 flex flex-col gap-6">
             <div>
-              <div className="text-xs text-slate-400 mb-2 uppercase tracking-wider font-semibold">Mac / Linux (Bash)</div>
+              <div className="text-xs text-slate-400 mb-2 uppercase tracking-wider font-semibold">Step 1 — Build the Docker Image</div>
               <pre className="text-sm text-blue-300 font-mono bg-slate-900 overflow-x-auto p-4 rounded border border-slate-700 shadow-inner">
-                {`export API_KEY="<your-api-key>"
-export HOSPITAL_ID="<your-hospital-id>"
-export SERVER_URL="http://host.docker.internal:8000"
-
-docker build -t fedcure-client -f client/Dockerfile .
-docker run --env API_KEY=$API_KEY --env HOSPITAL_ID=$HOSPITAL_ID --env SERVER_URL=$SERVER_URL fedcure-client`}
+{`docker build -t fedcure-client -f client/Dockerfile .`}
+              </pre>
+            </div>
+            <div>
+              <div className="text-xs text-slate-400 mb-2 uppercase tracking-wider font-semibold">Step 2 — Run Local Training</div>
+              <pre className="text-sm text-green-300 font-mono bg-slate-900 overflow-x-auto p-4 rounded border border-slate-700 shadow-inner">
+{`docker run --rm \
+  -e SERVER_URL="http://host.docker.internal:8000" \
+  -e HOSPITAL_ID=<your-hospital-id> \
+  -e API_KEY="<your-api-key>" \
+  -e NUM_ROUNDS=5 \
+  -e EPOCHS_PER_ROUND=3 \
+  -v "./my_patient_data.csv:/data/hospital.csv" \
+  fedcure-client`}
               </pre>
             </div>
           </div>
-          <div className="text-xs text-slate-400 mt-4 border-t border-slate-800 pt-4">
-            Ensure you run the build command from the root directory so <code className="bg-slate-800 px-1 py-0.5 rounded text-slate-300">heart_disease_data.csv</code> is included.
+          <div className="text-xs text-slate-400 mt-4 border-t border-slate-800 pt-4 space-y-1">
+            <p><code className="bg-slate-800 px-1 py-0.5 rounded text-slate-300">host.docker.internal</code> routes to the host machine from inside the container (Windows/macOS). On Linux, use <code className="bg-slate-800 px-1 py-0.5 rounded text-slate-300">--network host</code> and <code className="bg-slate-800 px-1 py-0.5 rounded text-slate-300">localhost</code> instead.</p>
+            <p>Mount your hospital&apos;s CSV file with the <code className="bg-slate-800 px-1 py-0.5 rounded text-slate-300">-v</code> flag. The container expects it at <code className="bg-slate-800 px-1 py-0.5 rounded text-slate-300">/data/hospital.csv</code>.</p>
           </div>
         </CardContent>
       </Card>

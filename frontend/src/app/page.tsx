@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { LinkButton } from "@/components/link-button";
 import { 
   Activity, 
   Network, 
@@ -32,14 +33,12 @@ export default function Home() {
           </nav>
 
           <div className="flex items-center gap-4">
-            <Link href="/login" className="text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors hidden sm:block">
+            <LinkButton href="/login" variant="ghost" size="sm" className="text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors hidden sm:block">
               Log in
-            </Link>
-            <Link href="/register">
-              <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/20 border-0 rounded-lg h-9 px-4 hover:-translate-y-0.5 transition-transform">
-                Get Started
-              </Button>
-            </Link>
+            </LinkButton>
+            <LinkButton href="/register" size="sm" className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/20 border-0 rounded-lg h-9 px-4 hover:-translate-y-0.5 transition-transform">
+              Get Started
+            </LinkButton>
           </div>
         </div>
       </header>
@@ -74,17 +73,13 @@ export default function Home() {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-6 pt-8 w-full justify-center max-w-md mx-auto sm:max-w-none animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300">
-              <Link href="/register">
-                <Button size="lg" className="w-full sm:w-auto h-16 px-10 text-lg bg-blue-600 hover:bg-blue-700 text-white shadow-2xl shadow-blue-500/40 transition-all duration-300 hover:-translate-y-1 border-0 rounded-2xl">
-                  Register Hospital
-                  <ArrowRight className="ml-2 h-6 w-6" />
-                </Button>
-              </Link>
-              <Link href="/login">
-                <Button size="lg" className="w-full sm:w-auto h-16 px-10 text-lg bg-slate-950 hover:bg-slate-800 text-white shadow-2xl shadow-slate-900/20 transition-all duration-300 hover:-translate-y-1 border-0 rounded-2xl">
-                  Login to Dashboard
-                </Button>
-              </Link>
+              <LinkButton href="/register" size="lg" className="w-full sm:w-auto h-16 px-10 text-lg bg-blue-600 hover:bg-blue-700 text-white shadow-2xl shadow-blue-500/40 transition-all duration-300 hover:-translate-y-1 border-0 rounded-2xl">
+                Register Hospital
+                <ArrowRight className="ml-2 h-6 w-6" />
+              </LinkButton>
+              <LinkButton href="/login" size="lg" className="w-full sm:w-auto h-16 px-10 text-lg bg-slate-950 hover:bg-slate-800 text-white shadow-2xl shadow-slate-900/20 transition-all duration-300 hover:-translate-y-1 border-0 rounded-2xl">
+                Login to Dashboard
+              </LinkButton>
             </div>
           </div>
         </div>
@@ -241,16 +236,12 @@ export default function Home() {
           <h2 className="text-3xl font-bold mb-6 text-slate-900">Ready to join the network?</h2>
           <p className="text-slate-500 mb-10 max-w-2xl mx-auto">Start contributing to the global medical AI model today with just a few CLI commands.</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/register">
-              <Button size="lg" className="h-14 px-10 bg-slate-900 text-white hover:bg-slate-800 hover:scale-105 transition-all duration-300 rounded-2xl font-semibold shadow-xl">
-                Get Started Now
-              </Button>
-            </Link>
-            <Link href="/login">
-              <Button size="lg" className="h-14 px-10 bg-slate-800 text-white hover:bg-slate-700 hover:scale-105 transition-all duration-300 rounded-2xl font-semibold shadow-lg">
-                Explore Demo
-              </Button>
-            </Link>
+            <LinkButton href="/register" size="lg" className="h-14 px-10 bg-slate-900 text-white hover:bg-slate-800 hover:scale-105 transition-all duration-300 rounded-2xl font-semibold shadow-xl">
+              Get Started Now
+            </LinkButton>
+            <LinkButton href="/login" size="lg" className="h-14 px-10 bg-slate-800 text-white hover:bg-slate-700 hover:scale-105 transition-all duration-300 rounded-2xl font-semibold shadow-lg">
+              Explore Demo
+            </LinkButton>
           </div>
         </div>
       </section>

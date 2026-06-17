@@ -1,0 +1,3 @@
+# Hospital patient data — never commit to git
+*.csv
+baseline_accuracy.txt

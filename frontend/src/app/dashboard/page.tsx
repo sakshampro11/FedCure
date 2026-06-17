@@ -54,7 +54,6 @@ export default function DashboardPage() {
       const history = rounds.map((r: any) => ({
         round: r.round_number,
         federatedModel: parseFloat((r.accuracy_federated * 100).toFixed(1)),
-        centralizedBaseline: parseFloat((r.accuracy_baseline * 100).toFixed(1)),
       }));
 
       setMetrics({
@@ -307,7 +306,7 @@ export default function DashboardPage() {
           <CardHeader>
             <CardTitle>Training Accuracy Timeline</CardTitle>
             <CardDescription>
-              Comparing the Federated Model against Centralized Baseline. Live update every 10s.
+              Federated Model accuracy across training rounds. Live update every 10s.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -321,7 +320,6 @@ export default function DashboardPage() {
                     <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
                     <Legend verticalAlign="top" height={36} />
                     <Line type="monotone" name="Federated Model" dataKey="federatedModel" stroke="#2563eb" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} />
-                    <Line type="monotone" name="Centralized Baseline" dataKey="centralizedBaseline" stroke="#94a3b8" strokeDasharray="5 5" strokeWidth={2} dot={false} />
                   </LineChart>
                 </ResponsiveContainer>
               ) : (

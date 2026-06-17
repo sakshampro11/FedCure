@@ -22,7 +22,6 @@ class TrainingRound(Base):
     id = Column(Integer, primary_key=True, index=True)
     round_number = Column(Integer, unique=True, index=True)
     accuracy_federated = Column(Float)
-    accuracy_baseline = Column(Float)
     epsilon = Column(Float)
     num_hospitals = Column(Integer)
     created_at = Column(DateTime, default=datetime.utcnow)

@@ -5,13 +5,12 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY main.py .
-COPY ml_model.py .
-COPY models.py .
-COPY federated.py .
-COPY training.py .
+COPY server/main.py .
+COPY server/nn_model.py .
+COPY server/db_models.py .
+COPY server/federated.py .
 
-RUN mkdir -p /app/models /app/data
+RUN mkdir -p /app/models
 
 EXPOSE 8000
 

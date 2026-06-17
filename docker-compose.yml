@@ -7,12 +7,11 @@ services:
   backend:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: server/Dockerfile
     ports:
       - "8000:8000"
     volumes:
       - ./models:/app/models
-      - ./data:/app/data
     environment:
       - DATABASE_URL=sqlite:///./fedcure.db
     healthcheck:
@@ -30,7 +29,7 @@ services:
     depends_on:
       - backend
     volumes:
-      - ./data/hospital_1.csv:/app/heart_disease_data.csv
+      - ./data/hospital_1.csv:/data/hospital.csv
     environment:
       - SERVER_URL=http://backend:8000
       - API_KEY=${HOSPITAL_1_API_KEY}
@@ -47,7 +46,7 @@ services:
     depends_on:
       - backend
     volumes:
-      - ./data/hospital_2.csv:/app/heart_disease_data.csv
+      - ./data/hospital_2.csv:/data/hospital.csv
     environment:
       - SERVER_URL=http://backend:8000
       - API_KEY=${HOSPITAL_2_API_KEY}
@@ -64,7 +63,7 @@ services:
     depends_on:
       - backend
     volumes:
-      - ./data/hospital_3.csv:/app/heart_disease_data.csv
+      - ./data/hospital_3.csv:/data/hospital.csv
     environment:
       - SERVER_URL=http://backend:8000
       - API_KEY=${HOSPITAL_3_API_KEY}
@@ -81,7 +80,7 @@ services:
     depends_on:
       - backend
     volumes:
-      - ./data/hospital_4.csv:/app/heart_disease_data.csv
+      - ./data/hospital_4.csv:/data/hospital.csv
     environment:
       - SERVER_URL=http://backend:8000
       - API_KEY=${HOSPITAL_4_API_KEY}

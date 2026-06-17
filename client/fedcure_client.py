@@ -1,24 +1,28 @@
 """
 FedCure FL Client — Hospital-side federated learning client.
 
-Hospitals run this script to participate in federated training rounds.
-On each round, the client:
+Hospitals run this script inside a Docker container to participate in
+federated training rounds. On each round, the client:
   1. Downloads the current global model from the FedCure server
-  2. Trains locally on its own data subset
+  2. Trains locally on its own hospital dataset (mounted via Docker volume)
   3. Adds differential privacy noise to the weights
   4. Submits updated weights back to the server
 
 Configuration via environment variables:
-  SERVER_URL     — FedCure API base URL (default: http://localhost:8000)
-  API_KEY        — Hospital API key (required)
-  HOSPITAL_ID    — Hospital identifier (required)
-  NUM_ROUNDS     — Number of FL rounds to participate in (default: 5)
+  SERVER_URL       — FedCure API base URL (default: http://localhost:8000)
+  API_KEY          — Hospital API key (required)
+  HOSPITAL_ID      — Hospital identifier (required)
+  DATA_PATH        — Path to the hospital's CSV dataset (default: /data/hospital.csv)
+  NUM_ROUNDS       — Number of FL rounds to participate in (default: 5)
   EPOCHS_PER_ROUND — Local training epochs per round (default: 3)
 
-Usage:
-  set API_KEY=your-api-key
-  set HOSPITAL_ID=1
-  python fedcure_client.py
+Usage (Docker):
+  docker run --rm \
+    -e SERVER_URL=http://host.docker.internal:8000 \
+    -e API_KEY=your-api-key \
+    -e HOSPITAL_ID=1 \
+    -v ./data/hospital_1.csv:/data/hospital.csv \
+    fedcure-client
 """
 
 import os
@@ -36,6 +40,22 @@ from torch.utils.data import DataLoader, TensorDataset
 # ──────────────────────────────────────────────
 # Configuration
 # ──────────────────────────────────────────────
+
+# Load environment variables from .env file
+for path in [".env", "../.env", "../../.env"]:
+    if os.path.exists(path):
+        with open(path, "r") as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith("#"):
+                    continue
+                if "=" in line:
+                    k, v = line.split("=", 1)
+                    k = k.strip()
+                    v = v.strip().strip("'\"")
+                    if k and k not in os.environ:
+                        os.environ[k] = v
+        break
 
 SERVER_URL = os.getenv("SERVER_URL", "http://localhost:8000")
 API_KEY = os.getenv("API_KEY")
@@ -73,22 +93,21 @@ class HeartDiseaseModel(nn.Module):
 # Data Loading & Preprocessing
 # ──────────────────────────────────────────────
 
-def load_and_preprocess_data(data_path=None):
+def load_and_preprocess_data():
     """
-    Load the UCI Heart Disease dataset, preprocess it, and return a
-    random 25% subset to simulate a single hospital's local data.
+    Load the hospital's local dataset and preprocess it for training.
+
+    The dataset path is set via the DATA_PATH environment variable.
+    In Docker, this is the volume-mounted hospital CSV file.
     """
-    if data_path and os.path.exists(data_path):
-        df = pd.read_csv(data_path)
-    else:
-        # Try common paths
-        for path in ["../heart_disease_data.csv", "heart_disease_data.csv"]:
-            if os.path.exists(path):
-                df = pd.read_csv(path)
-                break
-        else:
-            print("[ERROR] heart_disease_data.csv not found. Place it alongside the script or in the parent directory.")
-            sys.exit(1)
+    data_path = os.getenv("DATA_PATH", "/data/hospital.csv")
+
+    if not os.path.exists(data_path):
+        print(f"[ERROR] Dataset not found at {data_path}")
+        print("        Set DATA_PATH env var or mount the hospital CSV via Docker volume.")
+        sys.exit(1)
+
+    df = pd.read_csv(data_path)
 
     # Handle missing values — replace '?' with NaN then fill with median
     df = df.replace("?", np.nan)
@@ -104,15 +123,8 @@ def load_and_preprocess_data(data_path=None):
     scaler = StandardScaler()
     X = scaler.fit_transform(X)
 
-    # Simulate hospital data: take a random 25% subset
-    n_samples = len(X)
-    subset_size = max(1, n_samples // 4)
-    indices = np.random.choice(n_samples, size=subset_size, replace=False)
-    X_subset = X[indices]
-    y_subset = y[indices]
-
-    print(f"[DATA] Loaded {n_samples} total samples, using {subset_size} for this hospital.")
-    return X_subset, y_subset
+    print(f"[DATA] Loaded {len(X)} samples from {data_path}")
+    return X, y
 
 
 # ──────────────────────────────────────────────
@@ -192,7 +204,11 @@ def add_dp_noise(weights, sigma=0.01):
         tensor = torch.tensor(values)
         if tensor.is_floating_point():
             noise = torch.randn_like(tensor) * sigma
-            noisy[name] = (tensor + noise).tolist()
+            noisy_tensor = tensor + noise
+            if noisy_tensor.ndimension() == 0:
+                noisy[name] = noisy_tensor.item()
+            else:
+                noisy[name] = noisy_tensor.tolist()
         else:
             noisy[name] = values  # Skip integer params (e.g. num_batches_tracked)
     return noisy

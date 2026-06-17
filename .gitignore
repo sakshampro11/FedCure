@@ -1,7 +1,7 @@
 # Ignore specific Hackathon Documents and Datasets
 /FedCure_Abstract_HackBVP.pdf
 /FedCure_Short_PRD.docx
-heart_disease_data.csv
+projectOverview.md
 
 # Python Caches & Virtual Environments
 __pycache__/
@@ -20,13 +20,14 @@ models/
 *.pt
 *.pth
 
-# Data artifacts
+# Data — hospital CSVs contain patient data, never commit
+data/*.csv
 data/*.data
-data/heart_disease_clean.csv
 data/baseline_accuracy.txt
-# Keeping hospital_X.csv if you want them in repo for quick demo, 
-# but usually better to ignore them too.
-# data/hospital_*.csv
+
+# Raw Kaggle dataset (should live outside the repo)
+heart_statlog_cleveland_hungary_final.csv
+heart_disease_data.csv
 
 # Frontend
 frontend/node_modules/

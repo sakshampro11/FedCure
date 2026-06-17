@@ -1,17 +1,17 @@
 """
-Prepare the combined Heart Disease dataset (Cleveland + Hungarian + Switzerland +
-Long Beach VA + Statlog) for FedCure federated learning.
+One-time dataset preparation for FedCure.
+
+Cleans the combined Heart Disease Kaggle dataset and splits it into
+4 non-overlapping hospital subsets for federated learning.
 
 Source: https://www.kaggle.com/datasets/sid321axn/heart-statlog-cleveland-hungary-final
 Samples: ~1190  |  Features: 11 + target
 
-This script:
-  1. Loads the raw Kaggle CSV
-  2. Renames columns to match FedCure code conventions
-  3. Handles missing values (median fill) and outliers (clip extreme values)
-  4. Validates binary target
-  5. Prints a data quality report
-  6. Saves the cleaned dataset for downstream use
+Usage:
+    python temp_scripts/prepare_dataset.py <path-to-kaggle-csv>
+
+Example:
+    python temp_scripts/prepare_dataset.py ../heart_statlog_cleveland_hungary_final.csv
 """
 
 import os
@@ -20,20 +20,17 @@ import numpy as np
 import pandas as pd
 
 # ──────────────────────────────────────────────
-# Paths
+# Configuration
 # ──────────────────────────────────────────────
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.dirname(SCRIPT_DIR)
+DATA_DIR = os.path.join(PROJECT_ROOT, "data")
 
-RAW_CSV = os.path.join(PROJECT_ROOT, "heart_statlog_cleveland_hungary_final.csv")
-OUTPUT_CSV = os.path.join(PROJECT_ROOT, "heart_disease_data.csv")
-CLEAN_CSV = os.path.join(SCRIPT_DIR, "heart_disease_clean.csv")
+NUM_HOSPITALS = 4
+RANDOM_SEED = 42
 
-# ──────────────────────────────────────────────
 # Column mapping: Kaggle name → FedCure name
-# ──────────────────────────────────────────────
-
 COLUMN_MAP = {
     "age": "age",
     "sex": "sex",
@@ -49,21 +46,15 @@ COLUMN_MAP = {
     "target": "target",
 }
 
-# Expected column order after renaming
 FEATURE_COLS = ["age", "sex", "cp", "trestbps", "chol", "fbs",
                 "restecg", "thalach", "exang", "oldpeak", "slope"]
 ALL_COLS = FEATURE_COLS + ["target"]
 
 
-def main():
-    # ── Load raw CSV ──
-    if not os.path.exists(RAW_CSV):
-        print(f"[ERROR] Raw dataset not found at {RAW_CSV}")
-        print("        Download from: https://www.kaggle.com/datasets/sid321axn/heart-statlog-cleveland-hungary-final")
-        print(f"        Place it at: {RAW_CSV}")
-        sys.exit(1)
+def clean_dataset(raw_csv_path):
+    """Load, clean, and return the dataset as a DataFrame."""
 
-    df = pd.read_csv(RAW_CSV)
+    df = pd.read_csv(raw_csv_path)
     print(f"[LOAD] Read {len(df)} rows × {len(df.columns)} columns from raw CSV")
     print(f"       Columns: {list(df.columns)}")
 
@@ -81,7 +72,6 @@ def main():
     df = df[ALL_COLS]
 
     # ── Handle missing values ──
-    # Replace any '?' or empty strings with NaN
     df = df.replace("?", np.nan).replace("", np.nan)
     for col in df.columns:
         df[col] = pd.to_numeric(df[col], errors="coerce")
@@ -92,8 +82,7 @@ def main():
         df = df.fillna(df.median())
 
     # ── Handle outliers ──
-    # Some records from the Hungarian/Swiss datasets have cholesterol = 0,
-    # which is a known placeholder for missing data. Replace 0 chol with median.
+    # Some records have cholesterol = 0 (placeholder for missing data)
     n_zero_chol = (df["chol"] == 0).sum()
     if n_zero_chol > 0:
         chol_median = df.loc[df["chol"] > 0, "chol"].median()
@@ -113,11 +102,15 @@ def main():
     df["thalach"] = df["thalach"].clip(lower=50, upper=220)
 
     # ── Validate binary target ──
-    # Ensure target is strictly 0 or 1
     df["target"] = (df["target"] >= 1).astype(int)
     assert df["target"].isin([0, 1]).all(), "Target must be binary (0/1)"
 
-    # ── Data quality report ──
+    return df
+
+
+def print_statistics(df):
+    """Print a data quality report with means/stds for server inference."""
+
     print(f"\n{'='*65}")
     print(f"  DATA QUALITY REPORT  —  {len(df)} samples × {len(FEATURE_COLS)} features")
     print(f"{'='*65}")
@@ -137,29 +130,81 @@ def main():
         print(f"  {col:<12s} {df[col].min():>8.2f} {df[col].max():>8.2f} "
               f"{df[col].mean():>8.3f} {df[col].std():>8.3f} {df[col].median():>8.2f}")
 
-    # Print means and stds for hardcoding in main.py
-    print(f"\n  Means for main.py (copy-paste):")
+    # Print means and stds for hardcoding in server/main.py
+    print(f"\n  +---------------------------------------------------------+")
+    print(f"  |  COPY THESE INTO server/main.py for inference scaling:  |")
+    print(f"  +---------------------------------------------------------+")
     means = [f"{df[c].mean():.3f}" for c in FEATURE_COLS]
-    print(f"    [{', '.join(means)}]")
-    print(f"\n  Stds for main.py (copy-paste):")
+    print(f"  means = [{', '.join(means)}]")
     stds = [f"{df[c].std():.3f}" for c in FEATURE_COLS]
-    print(f"    [{', '.join(stds)}]")
+    print(f"  stds  = [{', '.join(stds)}]")
 
     # Missing values check
     n_remaining = df.isna().sum().sum()
     print(f"\n  Missing values: {n_remaining}")
     print(f"{'='*65}")
 
-    # ── Save ──
-    df.to_csv(OUTPUT_CSV, index=False)
-    print(f"\n[SAVED] {OUTPUT_CSV}  ({len(df)} rows)")
 
-    df.to_csv(CLEAN_CSV, index=False)
-    print(f"[SAVED] {CLEAN_CSV}  ({len(df)} rows)")
+def split_for_hospitals(df):
+    """Split the dataset into NUM_HOSPITALS non-overlapping subsets."""
 
-    print("\n[DONE] Dataset preparation complete. Next steps:")
-    print("  1. Run  data/split_for_hospitals.py   to create hospital subsets")
-    print("  2. Run  simulate_training.py          to train the global model")
+    os.makedirs(DATA_DIR, exist_ok=True)
+
+    # Shuffle the dataset
+    df = df.sample(frac=1, random_state=RANDOM_SEED).reset_index(drop=True)
+
+    # Split into non-overlapping subsets
+    indices = np.array_split(range(len(df)), NUM_HOSPITALS)
+
+    print(f"\n{'='*60}")
+    print(f"  HOSPITAL DATA SPLIT ({NUM_HOSPITALS} hospitals)")
+    print(f"{'='*60}")
+
+    for i, idx in enumerate(indices, start=1):
+        split_df = df.iloc[idx]
+        output_path = os.path.join(DATA_DIR, f"hospital_{i}.csv")
+        split_df.to_csv(output_path, index=False)
+
+        n_disease = (split_df["target"] == 1).sum()
+        n_healthy = (split_df["target"] == 0).sum()
+
+        print(f"  Hospital {i}:  {len(split_df):>3d} samples  "
+              f"(disease={n_disease}, healthy={n_healthy})  -> {output_path}")
+
+    print(f"{'='*60}")
+    print(f"\n[DONE] {NUM_HOSPITALS} hospital CSV files created in {DATA_DIR}")
+
+
+def main():
+    if len(sys.argv) < 2:
+        print("Usage: python temp_scripts/prepare_dataset.py <path-to-kaggle-csv>")
+        print("\nExample:")
+        print("  python temp_scripts/prepare_dataset.py ../heart_statlog_cleveland_hungary_final.csv")
+        sys.exit(1)
+
+    raw_csv_path = sys.argv[1]
+    if not os.path.exists(raw_csv_path):
+        print(f"[ERROR] File not found: {raw_csv_path}")
+        print("        Download from: https://www.kaggle.com/datasets/sid321axn/heart-statlog-cleveland-hungary-final")
+        sys.exit(1)
+
+    # Step 1: Clean the dataset
+    print("\n[STEP 1/3] Cleaning dataset...")
+    df = clean_dataset(raw_csv_path)
+
+    # Step 2: Print statistics
+    print("\n[STEP 2/3] Data quality report...")
+    print_statistics(df)
+
+    # Step 3: Split for hospitals
+    print("\n[STEP 3/3] Splitting for hospitals...")
+    split_for_hospitals(df)
+
+    print("\n" + "=" * 60)
+    print("  All done! Next steps:")
+    print("  1. Start the server:  uvicorn server.main:app --reload")
+    print("  2. Run FL clients:    docker run fedcure-client (x4)")
+    print("=" * 60)
 
 
 if __name__ == "__main__":

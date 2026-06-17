@@ -1,10 +1,10 @@
 import os
 import copy
 import torch
-from ml_model import HeartDiseaseModel, create_model
+from nn_model import HeartDiseaseModel, create_model
 
 # Directory to store global model versions
-MODELS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "models")
+MODELS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "models")
 os.makedirs(MODELS_DIR, exist_ok=True)
 
 # Track the current global model version

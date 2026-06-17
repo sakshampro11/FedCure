@@ -1,3 +1,11 @@
+import sys
+import os
+
+# Ensure the server directory is in sys.path so modules can be imported
+current_dir = os.path.dirname(os.path.abspath(__file__))
+if current_dir not in sys.path:
+    sys.path.insert(0, current_dir)
+
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import create_engine
@@ -5,23 +13,43 @@ from sqlalchemy.orm import sessionmaker, Session
 from pydantic import BaseModel
 from typing import List, Dict, Any, Optional
 import torch
-import models
+
+import db_models
 import federated
-from ml_model import create_model
+from nn_model import create_model
+import os
+
+# Load environment variables from .env file
+for path in [".env", "../.env", "../../.env"]:
+    if os.path.exists(path):
+        with open(path, "r") as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith("#"):
+                    continue
+                if "=" in line:
+                    k, v = line.split("=", 1)
+                    k = k.strip()
+                    v = v.strip().strip("'\"")
+                    if k and k not in os.environ:
+                        os.environ[k] = v
+        break
 
 # Database setup
-SQLALCHEMY_DATABASE_URL = "sqlite:///./fedcure.db"
+SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./fedcure.db")
 engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-models.Base.metadata.create_all(bind=engine)
+db_models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="FedCure API")
 
 # CORS middleware
+allowed_origins_str = os.getenv("ALLOWED_ORIGINS", "*")
+allowed_origins = [origin.strip() for origin in allowed_origins_str.split(",")] if allowed_origins_str else ["*"]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -29,7 +57,8 @@ app.add_middleware(
 
 # In-memory storage for pending weight submissions
 pending_weights: list = []
-REQUIRED_HOSPITALS = 4  # Number of hospitals needed before FedAvg runs
+pending_hospital_ids: set = set()  # Track unique hospitals that have submitted
+REQUIRED_HOSPITALS = 4  # Number of unique hospitals needed before FedAvg runs
 
 
 @app.on_event("startup")
@@ -94,7 +123,7 @@ class WeightSubmission(BaseModel):
 
 @app.post("/api/hospitals/register")
 def register_hospital(request: HospitalRegisterRequest, db: Session = Depends(get_db)):
-    new_hospital = models.Hospital(
+    new_hospital = db_models.Hospital(
         name=request.name,
         location=request.location,
         admin_email=request.admin_email
@@ -111,7 +140,7 @@ def register_hospital(request: HospitalRegisterRequest, db: Session = Depends(ge
 
 @app.post("/api/hospitals/login")
 def login_hospital(request: HospitalLoginRequest, db: Session = Depends(get_db)):
-    hospital = db.query(models.Hospital).filter(models.Hospital.api_key == request.api_key).first()
+    hospital = db.query(db_models.Hospital).filter(db_models.Hospital.api_key == request.api_key).first()
     if not hospital:
         raise HTTPException(status_code=401, detail="Invalid API Key")
 
@@ -134,14 +163,16 @@ def submit_weights(submission: WeightSubmission, db: Session = Depends(get_db)):
         "weights": submission.weights,
         "local_accuracy": submission.local_accuracy,
     })
+    pending_hospital_ids.add(submission.hospital_id)
 
-    submitted = len(pending_weights)
+    unique_hospitals = len(pending_hospital_ids)
 
-    if submitted < REQUIRED_HOSPITALS:
+    if unique_hospitals < REQUIRED_HOSPITALS:
         return {
             "status": "waiting",
-            "message": f"Received {submitted}/{REQUIRED_HOSPITALS} submissions. Waiting for more hospitals.",
-            "submissions_received": submitted,
+            "message": f"Received submissions from {unique_hospitals}/{REQUIRED_HOSPITALS} unique hospitals. Waiting for more hospitals.",
+            "submissions_received": len(pending_weights),
+            "unique_hospitals": unique_hospitals,
             "submissions_required": REQUIRED_HOSPITALS,
         }
 
@@ -156,21 +187,20 @@ def submit_weights(submission: WeightSubmission, db: Session = Depends(get_db)):
     new_version, weights_path = federated.save_global_model(aggregated_weights)
 
     # Determine round number
-    latest_round = db.query(models.TrainingRound).order_by(models.TrainingRound.round_number.desc()).first()
+    latest_round = db.query(db_models.TrainingRound).order_by(db_models.TrainingRound.round_number.desc()).first()
     round_number = (latest_round.round_number + 1) if latest_round else 1
 
     # Create TrainingRound record
-    training_round = models.TrainingRound(
+    training_round = db_models.TrainingRound(
         round_number=round_number,
         accuracy_federated=avg_accuracy,
-        accuracy_baseline=avg_accuracy * 0.78,  # Simulated baseline (lower than federated)
         epsilon=0.8,
-        num_hospitals=len(pending_weights),
+        num_hospitals=unique_hospitals,
     )
     db.add(training_round)
 
     # Create ModelVersion record
-    model_version = models.ModelVersion(
+    model_version = db_models.ModelVersion(
         version=f"v{new_version}",
         weights_path=weights_path,
         accuracy=avg_accuracy,
@@ -180,6 +210,7 @@ def submit_weights(submission: WeightSubmission, db: Session = Depends(get_db)):
 
     # Clear pending weights for next round
     pending_weights.clear()
+    pending_hospital_ids.clear()
 
     return {
         "status": "aggregated",
@@ -193,7 +224,7 @@ def submit_weights(submission: WeightSubmission, db: Session = Depends(get_db)):
 @app.get("/api/training/status")
 def get_training_status(db: Session = Depends(get_db)):
     """Return current training status from the database."""
-    latest_round = db.query(models.TrainingRound).order_by(models.TrainingRound.round_number.desc()).first()
+    latest_round = db.query(db_models.TrainingRound).order_by(db_models.TrainingRound.round_number.desc()).first()
 
     if not latest_round:
         return {
@@ -250,7 +281,7 @@ def get_global_model():
 @app.get("/api/dashboard/metrics")
 def get_dashboard_metrics(db: Session = Depends(get_db)):
     """Return all training rounds for the dashboard chart."""
-    rounds = db.query(models.TrainingRound).order_by(models.TrainingRound.round_number.asc()).all()
+    rounds = db.query(db_models.TrainingRound).order_by(db_models.TrainingRound.round_number.asc()).all()
 
     if not rounds:
         return {
@@ -263,7 +294,6 @@ def get_dashboard_metrics(db: Session = Depends(get_db)):
             {
                 "round_number": r.round_number,
                 "accuracy_federated": r.accuracy_federated,
-                "accuracy_baseline": r.accuracy_baseline,
                 "epsilon": r.epsilon,
                 "num_hospitals": r.num_hospitals,
                 "created_at": r.created_at.isoformat() if r.created_at else None,
@@ -297,7 +327,7 @@ def predict_heart_disease(vitals: PatientVitals):
     input_tensor = torch.tensor([features], dtype=torch.float32)
 
     # Standard scaling based on the dataset's exact mean and std (matching training setup)
-    # These values are computed by data/prepare_new_dataset.py on the ~1190-sample combined dataset
+    # These values are computed by temp_scripts/prepare_dataset.py on the ~1190-sample combined dataset
     means = torch.tensor([53.720, 0.764, 3.233, 132.263, 245.063, 0.213, 0.698, 139.733, 0.387, 0.923, 1.624], dtype=torch.float32)
     stds = torch.tensor([9.358, 0.425, 0.935, 17.964, 52.930, 0.410, 0.870, 25.518, 0.487, 1.086, 0.610], dtype=torch.float32)
     input_tensor = (input_tensor - means) / (stds + 1e-8)

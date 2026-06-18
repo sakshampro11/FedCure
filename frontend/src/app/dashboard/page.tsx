@@ -169,7 +169,7 @@ export default function DashboardPage() {
               <Input type="number" required placeholder="e.g. 240" className="bg-white" value={form.chol} onChange={(e) => handlePredictChange("chol", e.target.value)} />
             </div>
             <div className="space-y-2">
-              <Label className="flex items-center">Fasting Blood Sugar {">"}  120 <InfoTip text="Is fasting blood sugar > 120 mg/dl?" /></Label>
+              <Label className="flex items-center">Fasting Blood Sugar {">"} 120 <InfoTip text="Is fasting blood sugar > 120 mg/dl?" /></Label>
               <Select value={form.fbs || undefined} onValueChange={(v) => handlePredictChange("fbs", v)}>
                 <SelectTrigger className="bg-white"><SelectValue placeholder="Select" /></SelectTrigger>
                 <SelectContent>
@@ -229,6 +229,17 @@ export default function DashboardPage() {
         return null;
     }
   };
+
+  const dockerRunCommand = [
+    'docker run --rm \\',
+    '  -e SERVER_URL="https://fedcure-server.up.railway.app" \\',
+    '  -e API_KEY="<your-api-key>" \\',
+    '  -e HOSPITAL_ID=<your-hospital-id> \\',
+    '  -e NUM_ROUNDS=5 \\',
+    '  -e EPOCHS_PER_ROUND=3 \\',
+    '  -v "/absolute/path/to/hospital_data.csv:/data/hospital.csv" \\',
+    '  pchhabra07/fedcure-client:latest',
+  ].join('\n');
 
   return (
     <div className="container mx-auto p-4 md:p-8 space-y-8 animate-in fade-in duration-500">
@@ -458,7 +469,7 @@ export default function DashboardPage() {
                   </div>
                   <div className="p-6 bg-blue-50 rounded-2xl border border-blue-100">
                     <p className="text-sm text-blue-800 leading-relaxed font-semibold italic">
-                      "AI-assisted risk score should be used as secondary validation only. Heart disease risk is multifaceted."
+                      &quot;AI-assisted risk score should be used as secondary validation only. Heart disease risk is multifaceted.&quot;
                     </p>
                   </div>
                </div>
@@ -467,7 +478,7 @@ export default function DashboardPage() {
         </CardContent>
       </Card>
 
-      {/* E. Local Node Installation Guide */}
+      {/* E. Local Node Installation Guide — Docker Hub */}
       <Card className="bg-slate-900 text-slate-50 border-none shadow-xl relative overflow-hidden">
         <div className="absolute -right-4 -top-4 opacity-10">
           <Server className="w-32 h-32" />
@@ -478,34 +489,96 @@ export default function DashboardPage() {
             Participate in Training (Local Node Setup)
           </CardTitle>
           <CardDescription className="text-slate-400">
-            Execute the following command on your hospital&apos;s localized, firewalled servers where private patient data resides.
+            Run these commands on your hospital&apos;s secure, firewalled servers where private patient data resides. No source code or build tools required — just Docker.
           </CardDescription>
         </CardHeader>
-        <CardContent className="pt-2 space-y-4">
+        <CardContent className="pt-2 space-y-6">
+          {/* Prerequisites */}
+          <div className="bg-slate-800/50 p-4 rounded-md border border-slate-700">
+            <div className="text-xs text-amber-400 mb-2 uppercase tracking-wider font-semibold">Prerequisites</div>
+            <ul className="text-sm text-slate-300 space-y-1 list-disc list-inside">
+              <li>Install <a href="https://www.docker.com/products/docker-desktop/" target="_blank" rel="noopener noreferrer" className="text-blue-400 underline hover:text-blue-300">Docker Desktop</a> (Windows / macOS) or <code className="bg-slate-800 px-1 py-0.5 rounded text-slate-300">docker-ce</code> (Linux).</li>
+              <li>Obtain your <code className="bg-slate-800 px-1 py-0.5 rounded text-slate-300">HOSPITAL_ID</code> and <code className="bg-slate-800 px-1 py-0.5 rounded text-slate-300">API_KEY</code> from the FedCure admin who registered your hospital.</li>
+            </ul>
+          </div>
+
           <div className="bg-slate-800/50 p-4 rounded-md border border-slate-700 flex flex-col gap-6">
+            {/* Step 1 — Pull */}
             <div>
-              <div className="text-xs text-slate-400 mb-2 uppercase tracking-wider font-semibold">Step 1 — Build the Docker Image</div>
+              <div className="text-xs text-slate-400 mb-2 uppercase tracking-wider font-semibold">Step 1 — Pull the Pre-Built Image from Docker Hub</div>
               <pre className="text-sm text-blue-300 font-mono bg-slate-900 overflow-x-auto p-4 rounded border border-slate-700 shadow-inner">
-{`docker build -t fedcure-client -f client/Dockerfile .`}
+{`docker pull pchhabra07/fedcure-client:latest`}
               </pre>
             </div>
+
+            {/* Step 2 — Prepare Data */}
             <div>
-              <div className="text-xs text-slate-400 mb-2 uppercase tracking-wider font-semibold">Step 2 — Run Local Training</div>
-              <pre className="text-sm text-green-300 font-mono bg-slate-900 overflow-x-auto p-4 rounded border border-slate-700 shadow-inner">
-{`docker run --rm \
-  -e SERVER_URL="http://host.docker.internal:8000" \
-  -e HOSPITAL_ID=<your-hospital-id> \
-  -e API_KEY="<your-api-key>" \
-  -e NUM_ROUNDS=5 \
-  -e EPOCHS_PER_ROUND=3 \
-  -v "./my_patient_data.csv:/data/hospital.csv" \
-  fedcure-client`}
+              <div className="text-xs text-slate-400 mb-2 uppercase tracking-wider font-semibold">Step 2 — Prepare Your Dataset</div>
+              <p className="text-sm text-slate-300 mb-3">
+                Your hospital&apos;s patient data must be a CSV file with <strong className="text-white">exactly these 12 columns</strong> (order matters):
+              </p>
+              <pre className="text-sm text-amber-300 font-mono bg-slate-900 overflow-x-auto p-4 rounded border border-slate-700 shadow-inner">
+{`age,sex,cp,trestbps,chol,fbs,restecg,thalach,exang,oldpeak,slope,target`}
               </pre>
+              <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1 text-xs text-slate-400">
+                <span>{"• age — Patient age in years"}</span>
+                <span>{"• sex — 1 = Male, 0 = Female"}</span>
+                <span>{"• cp — Chest pain type (1–4)"}</span>
+                <span>{"• trestbps — Resting blood pressure"}</span>
+                <span>{"• chol — Serum cholesterol (mg/dl)"}</span>
+                <span>{"• fbs — Fasting blood sugar > 120 (1/0)"}</span>
+                <span>{"• restecg — Resting ECG result (0–2)"}</span>
+                <span>{"• thalach — Max heart rate achieved"}</span>
+                <span>{"• exang — Exercise-induced angina (1/0)"}</span>
+                <span>{"• oldpeak — ST depression (float)"}</span>
+                <span>{"• slope — ST slope (0–2)"}</span>
+                <span>{"• target — 1 = Heart disease, 0 = No"}</span>
+              </div>
+              <p className="text-xs text-slate-500 mt-3 italic">
+                Name the file anything you like (e.g. <code className="text-slate-400">hospital_data.csv</code>). You will point Docker to its path in the next step.
+              </p>
+            </div>
+
+            {/* Step 3 — Run Training */}
+            <div>
+              <div className="text-xs text-slate-400 mb-2 uppercase tracking-wider font-semibold">Step 3 — Run Local Federated Training</div>
+              <pre className="text-sm text-green-300 font-mono bg-slate-900 overflow-x-auto p-4 rounded border border-slate-700 shadow-inner">
+{dockerRunCommand}
+              </pre>
+              <p className="text-xs text-slate-500 mt-2 italic">
+                Replace <code className="text-slate-400">/absolute/path/to/hospital_data.csv</code> with the full path to your CSV file on disk.
+              </p>
+            </div>
+
+            {/* Step 4 — What happens */}
+            <div>
+              <div className="text-xs text-slate-400 mb-2 uppercase tracking-wider font-semibold">What Happens Next?</div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="flex items-start gap-2 text-sm text-slate-300">
+                  <span className="text-emerald-400 font-bold mt-0.5">1.</span>
+                  <span>The container downloads the current global model from the FedCure server.</span>
+                </div>
+                <div className="flex items-start gap-2 text-sm text-slate-300">
+                  <span className="text-emerald-400 font-bold mt-0.5">2.</span>
+                  <span>It trains locally on <strong className="text-white">your data only</strong> — nothing is uploaded.</span>
+                </div>
+                <div className="flex items-start gap-2 text-sm text-slate-300">
+                  <span className="text-emerald-400 font-bold mt-0.5">3.</span>
+                  <span>Differential Privacy noise (σ=0.01) is added to the updated weights.</span>
+                </div>
+                <div className="flex items-start gap-2 text-sm text-slate-300">
+                  <span className="text-emerald-400 font-bold mt-0.5">4.</span>
+                  <span>Only <strong className="text-white">anonymised weight updates</strong> are sent back — never raw patient data.</span>
+                </div>
+              </div>
             </div>
           </div>
-          <div className="text-xs text-slate-400 mt-4 border-t border-slate-800 pt-4 space-y-1">
-            <p><code className="bg-slate-800 px-1 py-0.5 rounded text-slate-300">host.docker.internal</code> routes to the host machine from inside the container (Windows/macOS). On Linux, use <code className="bg-slate-800 px-1 py-0.5 rounded text-slate-300">--network host</code> and <code className="bg-slate-800 px-1 py-0.5 rounded text-slate-300">localhost</code> instead.</p>
-            <p>Mount your hospital&apos;s CSV file with the <code className="bg-slate-800 px-1 py-0.5 rounded text-slate-300">-v</code> flag. The container expects it at <code className="bg-slate-800 px-1 py-0.5 rounded text-slate-300">/data/hospital.csv</code>.</p>
+
+          {/* Footer notes */}
+          <div className="text-xs text-slate-400 border-t border-slate-800 pt-4 space-y-1">
+            <p><code className="bg-slate-800 px-1 py-0.5 rounded text-slate-300">--rm</code> automatically removes the container after training completes, keeping your system clean.</p>
+            <p>The <code className="bg-slate-800 px-1 py-0.5 rounded text-slate-300">-v</code> flag mounts your local CSV into the container at <code className="bg-slate-800 px-1 py-0.5 rounded text-slate-300">/data/hospital.csv</code>. Your data stays on your machine at all times.</p>
+            <p>On Windows / macOS, Docker Desktop handles networking automatically. On Linux, add <code className="bg-slate-800 px-1 py-0.5 rounded text-slate-300">--network host</code> and use <code className="bg-slate-800 px-1 py-0.5 rounded text-slate-300">localhost</code> as the server URL if running the server locally.</p>
           </div>
         </CardContent>
       </Card>

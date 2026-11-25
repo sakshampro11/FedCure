@@ -11,7 +11,6 @@ federated training rounds. On each round, the client:
 Configuration via environment variables:
   SERVER_URL       — FedCure API base URL (default: http://localhost:8000)
   API_KEY          — Hospital API key (required)
-  HOSPITAL_ID      — Hospital identifier (required)
   DATA_PATH        — Path to the hospital's CSV dataset (default: /data/hospital.csv)
   NUM_ROUNDS       — Number of FL rounds to participate in (default: 5)
   EPOCHS_PER_ROUND — Local training epochs per round (default: 3)
@@ -20,7 +19,6 @@ Usage (Docker):
   docker run --rm \
     -e SERVER_URL=http://host.docker.internal:8000 \
     -e API_KEY=your-api-key \
-    -e HOSPITAL_ID=1 \
     -v ./data/hospital_1.csv:/data/hospital.csv \
     fedcure-client
 """
@@ -59,7 +57,6 @@ for path in [".env", "../.env", "../../.env"]:
 
 SERVER_URL = os.getenv("SERVER_URL", "http://localhost:8000")
 API_KEY = os.getenv("API_KEY")
-HOSPITAL_ID = os.getenv("HOSPITAL_ID")
 NUM_ROUNDS = int(os.getenv("NUM_ROUNDS", "5"))
 EPOCHS_PER_ROUND = int(os.getenv("EPOCHS_PER_ROUND", "3"))
 
@@ -134,21 +131,25 @@ def load_and_preprocess_data():
 def download_global_model():
     """Download current global model weights from the server."""
     url = f"{SERVER_URL}/api/training/global-model"
-    response = requests.get(url, timeout=30)
+    response = requests.get(url, headers={"X-API-Key": API_KEY}, timeout=30)
     response.raise_for_status()
     data = response.json()
     return data["weights"], data["version"]
 
 
-def submit_weights(hospital_id, weights, local_accuracy):
+def submit_weights(weights, local_accuracy):
     """Submit locally trained weights to the server for aggregation."""
     url = f"{SERVER_URL}/api/training/submit-weights"
     payload = {
-        "hospital_id": int(hospital_id),
         "weights": weights,
         "local_accuracy": local_accuracy,
     }
-    response = requests.post(url, json=payload, timeout=60)
+    response = requests.post(
+        url,
+        json=payload,
+        headers={"X-API-Key": API_KEY},
+        timeout=60,
+    )
     response.raise_for_status()
     return response.json()
 
@@ -224,16 +225,10 @@ def main():
         print("[ERROR] API_KEY environment variable is required.")
         print("  Usage: set API_KEY=your-key && python fedcure_client.py")
         sys.exit(1)
-    if not HOSPITAL_ID:
-        print("[ERROR] HOSPITAL_ID environment variable is required.")
-        print("  Usage: set HOSPITAL_ID=1 && python fedcure_client.py")
-        sys.exit(1)
-
     print("=" * 60)
     print("  FedCure FL Client")
     print("=" * 60)
     print(f"  Server:         {SERVER_URL}")
-    print(f"  Hospital ID:    {HOSPITAL_ID}")
     print(f"  Rounds:         {NUM_ROUNDS}")
     print(f"  Epochs/Round:   {EPOCHS_PER_ROUND}")
     print("=" * 60)
@@ -257,7 +252,11 @@ def main():
 
         # Step 2: Load weights into local model and train
         model = HeartDiseaseModel()
-        state_dict = {k: torch.tensor(v, dtype=torch.float32) for k, v in global_weights.items()}
+        reference_state = model.state_dict()
+        state_dict = {
+            name: torch.tensor(values, dtype=reference_state[name].dtype)
+            for name, values in global_weights.items()
+        }
         model.load_state_dict(state_dict)
 
         print(f"[2/4] Training locally for {EPOCHS_PER_ROUND} epochs...")
@@ -271,7 +270,7 @@ def main():
         # Step 4: Submit to server
         print("[4/4] Submitting weights to server...")
         try:
-            result = submit_weights(HOSPITAL_ID, noisy_weights, accuracy)
+            result = submit_weights(noisy_weights, accuracy)
             print(f"      Server response: {result['status']} — {result['message']}")
         except requests.exceptions.RequestException as e:
             print(f"[ERROR] Failed to submit weights: {e}")

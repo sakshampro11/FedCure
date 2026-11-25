@@ -8,10 +8,10 @@ Source: https://www.kaggle.com/datasets/sid321axn/heart-statlog-cleveland-hungar
 Samples: ~1190  |  Features: 11 + target
 
 Usage:
-    python temp_scripts/prepare_dataset.py <path-to-kaggle-csv>
+    python scripts/prepare_dataset.py <path-to-kaggle-csv>
 
 Example:
-    python temp_scripts/prepare_dataset.py ../heart_statlog_cleveland_hungary_final.csv
+    python scripts/prepare_dataset.py ../heart_statlog_cleveland_hungary_final.csv
 """
 
 import os
@@ -130,9 +130,9 @@ def print_statistics(df):
         print(f"  {col:<12s} {df[col].min():>8.2f} {df[col].max():>8.2f} "
               f"{df[col].mean():>8.3f} {df[col].std():>8.3f} {df[col].median():>8.2f}")
 
-    # Print means and stds for hardcoding in server/main.py
+    # Print means and stds for updating backend/app/main.py inference scaling.
     print(f"\n  +---------------------------------------------------------+")
-    print(f"  |  COPY THESE INTO server/main.py for inference scaling:  |")
+    print(f"  |  COPY THESE INTO backend/app/main.py for inference scaling:  |")
     print(f"  +---------------------------------------------------------+")
     means = [f"{df[c].mean():.3f}" for c in FEATURE_COLS]
     print(f"  means = [{', '.join(means)}]")
@@ -177,9 +177,9 @@ def split_for_hospitals(df):
 
 def main():
     if len(sys.argv) < 2:
-        print("Usage: python temp_scripts/prepare_dataset.py <path-to-kaggle-csv>")
+        print("Usage: python scripts/prepare_dataset.py <path-to-kaggle-csv>")
         print("\nExample:")
-        print("  python temp_scripts/prepare_dataset.py ../heart_statlog_cleveland_hungary_final.csv")
+        print("  python scripts/prepare_dataset.py ../heart_statlog_cleveland_hungary_final.csv")
         sys.exit(1)
 
     raw_csv_path = sys.argv[1]

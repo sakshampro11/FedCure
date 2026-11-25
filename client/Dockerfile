@@ -1,14 +1,16 @@
-FROM python:3.10-slim
+FROM python:3.11-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1
 
 WORKDIR /app
 
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --upgrade pip && pip install -r requirements.txt
 
+RUN useradd --create-home --uid 10001 appuser && mkdir -p /data && chown appuser:appuser /data
 COPY fedcure_client.py .
-
-# Hospital data is mounted at runtime via Docker volume:
-#   -v ./data/hospital_1.csv:/data/hospital.csv
-RUN mkdir -p /data
+USER appuser
 
 CMD ["python", "fedcure_client.py"]

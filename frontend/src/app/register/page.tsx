@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { registerHospital } from "@/lib/api";
+import { apiErrorMessage, registerHospital } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,6 +14,7 @@ import { Logo } from "@/components/logo";
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({ name: "", location: "", admin_email: "" });
+  const [enrollmentCode, setEnrollmentCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [apiKey, setApiKey] = useState("");
@@ -32,15 +33,15 @@ export default function RegisterPage() {
     setError("");
     
     try {
-      const response = await registerHospital(formData);
+      const response = await registerHospital(formData, enrollmentCode);
       if (response.api_key && response.hospital_id !== undefined) {
         setApiKey(response.api_key);
         setHospitalId(response.hospital_id);
       } else {
         throw new Error("Invalid response from server.");
       }
-    } catch (err: any) {
-      setError(err?.response?.data?.detail || err.message || "Registration failed. Please try again.");
+    } catch (err: unknown) {
+      setError(apiErrorMessage(err, "Registration failed. Please try again."));
     } finally {
       setLoading(false);
     }
@@ -211,6 +212,20 @@ export default function RegisterPage() {
                       onChange={handleChange}
                     />
                   </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="enrollmentCode" className="text-slate-700 font-semibold tracking-wide uppercase text-xs pl-1">Network Enrollment Code</Label>
+                    <Input
+                      id="enrollmentCode"
+                      type="password"
+                      placeholder="Provided by the FedCure administrator"
+                      required
+                      autoComplete="off"
+                      className="h-14 bg-slate-50/50 border-slate-200 focus:ring-blue-500/20 rounded-xl"
+                      value={enrollmentCode}
+                      onChange={(e) => setEnrollmentCode(e.target.value)}
+                    />
+                    <p className="text-xs text-slate-500">This code is not saved in your browser.</p>
+                  </div>
                 </div>
                 
                 {error && (
@@ -219,7 +234,7 @@ export default function RegisterPage() {
                   </p>
                 )}
 
-                <Button type="submit" className="w-full h-14 bg-blue-600 hover:bg-blue-700 text-white text-lg font-semibold rounded-xl shadow-xl shadow-blue-500/20 transition-all mt-4" disabled={loading}>
+                <Button type="submit" className="w-full h-14 bg-blue-600 hover:bg-blue-700 text-white text-lg font-semibold rounded-xl shadow-xl shadow-blue-500/20 transition-all mt-4" disabled={loading || !enrollmentCode}>
                   {loading ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Registering...</> : "Complete Registration"}
                   {!loading && <ArrowLeft className="ml-2 h-5 w-5 rotate-180" />}
                 </Button>

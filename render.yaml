@@ -1,0 +1,35 @@
+services:
+  - type: web
+    name: fedcure-api
+    runtime: docker
+    region: singapore
+    plan: starter
+    numInstances: 1
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/health
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: fedcure-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: REGISTRATION_TOKEN
+        sync: false
+      - key: ALLOWED_ORIGINS
+        sync: false
+      - key: REQUIRED_HOSPITALS
+        value: "4"
+      - key: ACCESS_TOKEN_MINUTES
+        value: "480"
+
+databases:
+  - name: fedcure-db
+    region: singapore
+    plan: 0.1c-256mb
+    databaseName: fedcure
+    user: fedcure
+    ipAllowList: []

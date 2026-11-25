@@ -1,47 +1,47 @@
-# Ignore specific Hackathon Documents and Datasets
-/FedCure_Abstract_HackBVP.pdf
-/FedCure_Short_PRD.docx
-projectOverview.md
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
 
-# Python Caches & Virtual Environments
+# Python
 __pycache__/
 *.py[cod]
-*$py.class
-env/
-venv/
+*.so
 .venv/
-.env
+venv/
+env/
+*.db
+backend/.pytest_cache/
 
-# Database
-fedcure.db
-
-# Federated Learning Saved Models
+# Federated-learning artifacts and private data
+data/*.csv
+data/*.data
+data/baseline_accuracy.txt
 models/
 *.pt
 *.pth
 
-# Data — hospital CSVs contain patient data, never commit
-data/*.csv
-data/*.data
-data/baseline_accuracy.txt
-
-# Raw Kaggle dataset (should live outside the repo)
-heart_statlog_cleveland_hungary_final.csv
-heart_disease_data.csv
-
-# Frontend
+# Node and Next.js
 frontend/node_modules/
 frontend/.next/
 frontend/out/
-frontend/build/
-frontend/.env.local
-frontend/.env.development.local
-frontend/.env.test.local
-frontend/.env.production.local
+frontend/coverage/
 frontend/npm-debug.log*
 frontend/yarn-debug.log*
-frontend/yarn-error.log*
+frontend/pnpm-debug.log*
 
-# OS specific files
+# Deployment and tooling state
+.vercel/
+.render/
+.npm-cache/
+**/.npm-cache/
+
+# OS and editor files
 .DS_Store
 Thumbs.db
+.idea/
+.vscode/
+*.tsbuildinfo

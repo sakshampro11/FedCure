@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { loginHospital } from "@/lib/api";
+import { apiErrorMessage, loginHospital } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -33,8 +33,8 @@ export default function LoginPage() {
       } else {
         throw new Error("Invalid response from server.");
       }
-    } catch (err: any) {
-      setError(err?.response?.data?.detail || err.message || "Invalid API Key. Please try again.");
+    } catch (err: unknown) {
+      setError(apiErrorMessage(err, "Invalid API key. Please try again."));
     } finally {
       setLoading(false);
     }

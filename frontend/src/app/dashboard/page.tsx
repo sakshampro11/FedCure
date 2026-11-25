@@ -1,8 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getDashboardMetrics, predictHeartDisease } from "@/lib/api";
+import {
+  getDashboardMetrics,
+  isUnauthorized,
+  predictHeartDisease,
+  type PredictionInput,
+} from "@/lib/api";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +19,11 @@ import { ShieldCheck, Activity, Users, Settings, Database, Server, RefreshCw, Ch
 import { RiskGauge } from "@/components/RiskGauge";
 import { InfoTip } from "@/components/info-tip";
 
+type ChartPoint = {
+  round: number;
+  federatedModel: number;
+};
+
 export default function DashboardPage() {
   const router = useRouter();
   const [refreshing, setRefreshing] = useState(false);
@@ -24,8 +34,7 @@ export default function DashboardPage() {
     participating_hospitals: 0,
     epsilon: 0,
     latest_accuracy: 0,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    history: [] as any[]
+    history: [] as ChartPoint[]
   });
 
   // Prediction Form State
@@ -46,15 +55,14 @@ export default function DashboardPage() {
     slope: ""
   });
 
-  const fetchMetrics = async () => {
+  const fetchMetrics = useCallback(async () => {
     try {
       const data = await getDashboardMetrics();
       const rounds = data.rounds || [];
       const latestRound = rounds.length > 0 ? rounds[rounds.length - 1] : null;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const history = rounds.map((r: any) => ({
-        round: r.round_number,
-        federatedModel: parseFloat((r.accuracy_federated * 100).toFixed(1)),
+      const history = rounds.map((round) => ({
+        round: round.round_number,
+        federatedModel: parseFloat((round.accuracy_federated * 100).toFixed(1)),
       }));
 
       setMetrics({
@@ -64,14 +72,14 @@ export default function DashboardPage() {
         latest_accuracy: latestRound ? latestRound.accuracy_federated : 0,
         history: history,
       });
-    } catch (err: any) {
-      if (err?.response?.status === 401) {
+    } catch (err: unknown) {
+      if (isUnauthorized(err)) {
         localStorage.removeItem("fedcure_jwt");
         router.push("/login");
       }
       console.error("Failed to fetch metrics", err);
     }
-  };
+  }, [router]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -83,7 +91,7 @@ export default function DashboardPage() {
     fetchMetrics();
     const interval = setInterval(fetchMetrics, 10000);
     return () => clearInterval(interval);
-  }, []);
+  }, [fetchMetrics]);
 
   const handlePredictChange = (name: string, value: string | null) => {
     if (value !== null) {
@@ -96,7 +104,7 @@ export default function DashboardPage() {
     setPredicting(true);
     setPredictionResult(null);
     try {
-      const submitData = {
+      const submitData: PredictionInput = {
         age: Number(form.age),
         sex: form.sex === "Male" ? 1 : 0,
         cp: form.cp === "Typical Angina" ? 1 : form.cp === "Atypical Angina" ? 2 : form.cp === "Non-anginal Pain" ? 3 : 4,
@@ -232,13 +240,12 @@ export default function DashboardPage() {
 
   const dockerRunCommand = [
     'docker run --rm \\',
-    '  -e SERVER_URL="https://fedcure-server.up.railway.app" \\',
+    '  -e SERVER_URL="https://YOUR-RENDER-API.onrender.com" \\',
     '  -e API_KEY="<your-api-key>" \\',
-    '  -e HOSPITAL_ID=<your-hospital-id> \\',
     '  -e NUM_ROUNDS=5 \\',
     '  -e EPOCHS_PER_ROUND=3 \\',
     '  -v "/absolute/path/to/hospital_data.csv:/data/hospital.csv" \\',
-    '  pchhabra07/fedcure-client:latest',
+    '  fedcure-client:latest',
   ].join('\n');
 
   return (
@@ -498,16 +505,16 @@ export default function DashboardPage() {
             <div className="text-xs text-amber-400 mb-2 uppercase tracking-wider font-semibold">Prerequisites</div>
             <ul className="text-sm text-slate-300 space-y-1 list-disc list-inside">
               <li>Install <a href="https://www.docker.com/products/docker-desktop/" target="_blank" rel="noopener noreferrer" className="text-blue-400 underline hover:text-blue-300">Docker Desktop</a> (Windows / macOS) or <code className="bg-slate-800 px-1 py-0.5 rounded text-slate-300">docker-ce</code> (Linux).</li>
-              <li>Obtain your <code className="bg-slate-800 px-1 py-0.5 rounded text-slate-300">HOSPITAL_ID</code> and <code className="bg-slate-800 px-1 py-0.5 rounded text-slate-300">API_KEY</code> from the FedCure admin who registered your hospital.</li>
+              <li>Register the hospital, then store the one-time <code className="bg-slate-800 px-1 py-0.5 rounded text-slate-300">API_KEY</code> securely. It identifies and authenticates the client.</li>
             </ul>
           </div>
 
           <div className="bg-slate-800/50 p-4 rounded-md border border-slate-700 flex flex-col gap-6">
             {/* Step 1 — Pull */}
             <div>
-              <div className="text-xs text-slate-400 mb-2 uppercase tracking-wider font-semibold">Step 1 — Pull the Pre-Built Image from Docker Hub</div>
+              <div className="text-xs text-slate-400 mb-2 uppercase tracking-wider font-semibold">Step 1 — Build the Trusted Client Image</div>
               <pre className="text-sm text-blue-300 font-mono bg-slate-900 overflow-x-auto p-4 rounded border border-slate-700 shadow-inner">
-{`docker pull pchhabra07/fedcure-client:latest`}
+{`docker build -t fedcure-client:latest ./client`}
               </pre>
             </div>
 
@@ -546,7 +553,7 @@ export default function DashboardPage() {
 {dockerRunCommand}
               </pre>
               <p className="text-xs text-slate-500 mt-2 italic">
-                Replace <code className="text-slate-400">/absolute/path/to/hospital_data.csv</code> with the full path to your CSV file on disk.
+                Replace the Render URL, API key, and CSV path. Build from the reviewed FedCure source checkout; do not use an untrusted public image.
               </p>
             </div>
 
